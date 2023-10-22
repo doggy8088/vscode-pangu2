@@ -1,0 +1,99 @@
+{
+  "name": "pangu2",
+  "displayName": "盤古之白",
+  "description": "這個擴充套件會自動替你在文件中所有的中文字和半形的英文、數字、符號之間插入空白。",
+  "version": "0.1.0",
+  "preview": true,
+  "publisher": "doggy8088",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doggy8088/vscode-pangu"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "license": "MIT",
+  "galleryBanner": {
+    "color": "#EBF0F7",
+    "theme": "light"
+  },
+  "keywords": [
+    "pangu",
+    "中文"
+  ],
+  "categories": [
+    "Formatters"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/main",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pangu2.add_space_selection",
+        "title": "Pangu: 加入盤古之白 (選取範圍)"
+      },
+      {
+        "command": "pangu2.add_space_whole",
+        "title": "Pangu: 加入盤古之白 (整份文件)"
+      }
+    ],
+    "menus": {
+        "editor/context": [
+            {
+                "command": "pangu2.add_space_whole",
+                "when": "!editorHasSelection",
+                "group": "pangu"
+            },
+            {
+                "command": "pangu2.add_space_selection",
+                "when": "editorHasSelection",
+                "group": "pangu"
+            }
+        ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "盤古之白",
+      "properties": {
+        "pangu2.autoAddSpaceOnSave": {
+          "type": "boolean",
+          "default": false,
+          "title": "儲存時自動執行盤古之白",
+          "description": "自動在儲存文件時加入盤古之白"
+        },
+        "pangu2.autoAddSpaceOnSaveFileExtensions": {
+          "title": "僅在特定檔案類型儲存時自動執行盤古之白",
+          "type": "array",
+          "default": [ ".txt" ],
+          "description": "請設定自定義的副檔名以在文字儲存時自動套用盤古之白，例如：.md、.txt 或 * 等等。預設僅套用 .txt 文件。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:publish": "vsce publish",
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "test-compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/node": "^12.12.21",
+    "@types/pangu": "^3.3.0",
+    "@types/vscode": "^1.41.0",
+    "esbuild": "^0.19.5",
+    "glob": "^7.1.5",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.4",
+    "vscode-test": "^1.2.2"
+  },
+  "dependencies": {
+    "pangu": "^4.0.7"
+  }
+}
