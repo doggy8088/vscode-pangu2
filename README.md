@@ -2,7 +2,8 @@
 
 如果你跟我一樣，每次看到網頁上的中文字和英文、數字、符號擠在一塊，就會坐立難安，忍不住想在它們之間加個空格。這個 Visual Studio Code 擴充套件會自動替你在文件中所有的中文字和半形的英文、數字、符號之間插入空白。如果有任何建議與討論，歡迎來到[這裡](https://github.com/doggy8088/vscode-pangu2/issues)留言交流。
 
-![images](images/pangu.jpg)
+![image](https://i.imgur.com/7JwcbUn.gif)
+
 
 ## 主要特色
 
