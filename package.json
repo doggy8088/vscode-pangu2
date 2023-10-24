@@ -2,7 +2,7 @@
   "name": "pangu2",
   "displayName": "盤古之白",
   "description": "這個擴充套件會自動替你在文件中所有的中文字和半形的英文、數字、符號之間插入空白。",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "preview": true,
   "publisher": "doggy8088",
   "icon": "icon.png",
@@ -41,18 +41,18 @@
       }
     ],
     "menus": {
-        "editor/context": [
-            {
-                "command": "pangu2.add_space_whole",
-                "when": "!editorHasSelection",
-                "group": "pangu"
-            },
-            {
-                "command": "pangu2.add_space_selection",
-                "when": "editorHasSelection",
-                "group": "pangu"
-            }
-        ]
+      "editor/context": [
+        {
+          "command": "pangu2.add_space_whole",
+          "when": "!editorHasSelection",
+          "group": "pangu"
+        },
+        {
+          "command": "pangu2.add_space_selection",
+          "when": "editorHasSelection",
+          "group": "pangu"
+        }
+      ]
     },
     "configuration": {
       "type": "object",
@@ -67,7 +67,9 @@
         "pangu2.autoAddSpaceOnSaveFileExtensions": {
           "title": "僅在特定檔案類型儲存時自動執行盤古之白",
           "type": "array",
-          "default": [ ".txt" ],
+          "default": [
+            ".txt"
+          ],
           "description": "請設定自定義的副檔名以在文字儲存時自動套用盤古之白，例如：.md、.txt 或 * 等等。預設僅套用 .txt 文件。"
         }
       }
@@ -93,5 +95,10 @@
     "vscode-test": "^1.2.2"
   },
   "dependencies": {
+    "remark": "^15.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.3",
+    "unist-util-visit": "^5.0.0"
   }
 }

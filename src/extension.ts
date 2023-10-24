@@ -1,8 +1,18 @@
-import { pangu } from './Pangu';
-import path = require('path');
-import vscode = require('vscode');
+import * as path from "path";
+import * as vscode from "vscode";
+
+import { pangu } from './Pangu.js';
+
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkStringify from "remark-stringify";
+import { visit } from "unist-util-visit";
+
+let output: vscode.OutputChannel;
 
 export function activate(ctx: vscode.ExtensionContext) {
+  output = vscode.window.createOutputChannel('盤古之白');
+
   ctx.subscriptions.push(
     vscode.commands.registerCommand(
       'pangu2.add_space_selection',
@@ -26,15 +36,39 @@ function addSpace(
   sel: vscode.Selection[]
 ) {
   e.edit(function (edit: vscode.TextEditorEdit) {
+    let parsed: string = '';
     for (var x = 0; x < sel.length; x++) {
       let txt: string = d.getText(new vscode.Range(sel[x].start, sel[x].end));
-      let parsed: string = pangu.spacing(txt);
+      if (d.languageId === 'markdown') {
+
+        const processor = unified()
+          .use(remarkParse)
+          .use(remarkStringify);
+
+        const ast = processor.parse(txt);
+
+        visit(ast, 'text', (node) => {
+          node.value = pangu.spacing(node.value)
+        });
+
+        parsed = processor.stringify(ast);
+        // output.appendLine(parsed);
+      } else {
+        parsed = pangu.spacing(txt);
+      }
+
       if (txt !== parsed) {
+        // 如果 txt 結尾不是斷行符號，就把 parsed 的結尾斷行符號去掉
+        if (txt.endsWith('\n') === false) {
+          parsed = parsed.trimEnd();
+        }
+
         edit.replace(sel[x], parsed);
       }
     }
   });
 }
+
 function addSpaceSelection() {
   let e = vscode.window.activeTextEditor;
   if (e) {

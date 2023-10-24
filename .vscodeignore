@@ -7,3 +7,5 @@ tslint.json
 PUBLISH.md
 package-lock.json
 node_modules/**
+images/**
+*.vsix

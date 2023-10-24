@@ -2,13 +2,13 @@
 
 如果你跟我一樣，每次看到網頁上的中文字和英文、數字、符號擠在一塊，就會坐立難安，忍不住想在它們之間加個空格。這個 Visual Studio Code 擴充套件會自動替你在文件中所有的中文字和半形的英文、數字、符號之間插入空白。如果有任何建議與討論，歡迎來到[這裡](https://github.com/doggy8088/vscode-pangu2/issues)留言交流。
 
-![image](https://i.imgur.com/7JwcbUn.gif)
-
+![image](images/pangu.gif)
 
 ## 主要特色
 
 * 支援將**選取文字**加入盤古之白
 * 支援將**整份文件**加入盤古之白
+* 支援 **Markdown** 文件加入盤古之白
 * 支援儲存文件時自動加入盤古之白 (預設並未啟用)
 
 ## 使用方式
@@ -52,14 +52,15 @@
 {
   "pangu2.autoAddSpaceOnSave": true,
   "pangu2.autoAddSpaceOnSaveFileExtensions": [
-    ".txt"
+    ".txt",
+    ".md"
   ]
 }
 ```
 
 ## 已知問題
 
-* 目前僅支援 HTML 與純文字文件可以正常運作，若套用在整份 Markdown 文件上，可能會導致部分 Markdown 語法無法正常顯示。
+* 目前僅支援 HTML、Markdown 與純文字文件可以正常運作，若套用其他類型的文件上，可能會導致部分語法錯誤。
 
 * 若要在任何程式語言中使用本套件，請多利用將**選取文字**加入盤古之白的功能套用在註解上，以避免程式碼被破壞。
 
