@@ -2,6 +2,11 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.5.0 - 2023-11-08
+
+* 在 Markdown 文件使用「盤古之白」時支援 GFM (GitHub Flavored Markdown) 格式
+  * 加入 [remark-gfm](https://www.npmjs.com/package/remark-gfm)
+
 ## 0.4.0 - 2023-11-08
 
 * 在 Markdown 文件使用「盤古之白」時支援 YAML, TOML 格式

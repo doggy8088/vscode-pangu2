@@ -1,18 +1,19 @@
-import * as path from "path";
-import * as vscode from "vscode";
+import * as path from 'path';
+import * as vscode from 'vscode';
 
 import { pangu } from './Pangu.js';
 
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkStringify from "remark-stringify";
-import remarkFrontmatter from 'remark-frontmatter'
-import { visit } from "unist-util-visit";
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
+import remarkStringify from 'remark-stringify';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkPangu from './remark-pangu.js';
 
-let output: vscode.OutputChannel;
+let logger: vscode.OutputChannel;
 
 export function activate(ctx: vscode.ExtensionContext) {
-  output = vscode.window.createOutputChannel('盤古之白');
+  logger = vscode.window.createOutputChannel('盤古之白');
 
   ctx.subscriptions.push(
     vscode.commands.registerCommand(
@@ -40,26 +41,23 @@ function addSpace(
     let parsed: string = '';
     for (var x = 0; x < sel.length; x++) {
       let txt: string = d.getText(new vscode.Range(sel[x].start, sel[x].end));
-      if (d.languageId === 'markdown') {
+      switch (d.languageId) {
+        case 'markdown':
+          parsed = unified()
+            .use(remarkParse)
+            .use(remarkGfm)
+            .use(remarkFrontmatter, ['yaml', 'toml'])
+            .use(remarkPangu(logger))
+            .use(remarkStringify)
+            .processSync(txt).toString();
+          break;
 
-        const processor = unified()
-          .use(remarkParse)
-          .use(remarkFrontmatter, ['yaml', 'toml'])
-          .use(remarkStringify);
-
-        const ast = processor.parse(txt);
-
-        visit(ast, 'text', (node) => {
-          node.value = pangu.spacing(node.value)
-        });
-
-        parsed = processor.stringify(ast);
-        // output.appendLine(parsed);
-      } else {
-        parsed = pangu.spacing(txt);
+        default:
+          parsed = pangu.spacing(txt);
+          break;
       }
 
-      if (txt !== parsed) {
+      if (!!parsed && txt !== parsed) {
         // 如果 txt 結尾不是斷行符號，就把 parsed 的結尾斷行符號去掉
         if (txt.endsWith('\n') === false) {
           parsed = parsed.trimEnd();
