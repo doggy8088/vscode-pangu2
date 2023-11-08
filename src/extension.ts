@@ -6,6 +6,7 @@ import { pangu } from './Pangu.js';
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
+import remarkFrontmatter from 'remark-frontmatter'
 import { visit } from "unist-util-visit";
 
 let output: vscode.OutputChannel;
@@ -43,6 +44,7 @@ function addSpace(
 
         const processor = unified()
           .use(remarkParse)
+          .use(remarkFrontmatter, ['yaml', 'toml'])
           .use(remarkStringify);
 
         const ast = processor.parse(txt);

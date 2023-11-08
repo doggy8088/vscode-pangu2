@@ -2,6 +2,11 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.4.0 - 2023-11-08
+
+* 在 Markdown 文件使用「盤古之白」時支援 YAML, TOML 格式
+  * 加入 [remark-frontmatter](https://www.npmjs.com/package/remark-frontmatter)
+
 ## 0.3.0 - 2023-10-25
 
 * 支援 **Markdown** 文件加入盤古之白
