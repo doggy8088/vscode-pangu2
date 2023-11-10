@@ -2,6 +2,12 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.6.0 - 2023-11-11
+
+* Markdown 支援 [Azure DevOps 的 Wikis](https://learn.microsoft.com/en-us/azure/devops/project/wiki/wiki-markdown-guidance?view=azure-devops&WT.mc_id=DT-MVP-4015686#table-of-contents-toc-for-wiki-pages) 的 TOC 與 TOSP 語法
+  * `[[_TOC_]]`
+  * `[[_TOSP_]]`
+
 ## 0.5.0 - 2023-11-08
 
 * 在 Markdown 文件使用「盤古之白」時支援 GFM (GitHub Flavored Markdown) 格式

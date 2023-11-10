@@ -14,6 +14,7 @@ let logger: vscode.OutputChannel;
 
 export function activate(ctx: vscode.ExtensionContext) {
   logger = vscode.window.createOutputChannel('盤古之白');
+  logger.appendLine('盤古之白已啟動');
 
   ctx.subscriptions.push(
     vscode.commands.registerCommand(
@@ -48,8 +49,25 @@ function addSpace(
             .use(remarkGfm)
             .use(remarkFrontmatter, ['yaml', 'toml'])
             .use(remarkPangu(logger))
-            .use(remarkStringify)
+            .use(remarkStringify, {
+              // https://github.com/remarkjs/remark/tree/main/packages/remark-stringify#options
+              emphasis: '_',
+              rule: '-',
+            })
             .processSync(txt).toString();
+
+          // TODO: 還不知道怎樣避免 remark 將 [[_TOC_]] 跳脫成 \[\[_TOC_]] 這種格式
+          // https://github.com/orgs/remarkjs/discussions/1258
+          if (parsed.includes('\\[\\[_TOC_]]')) {
+            parsed = parsed.replace('\\[\\[_TOC_]]', '[[_TOC_]]');
+          }
+
+          // TODO: 還不知道怎樣避免 remark 將 [[_TOSP_]] 跳脫成 \[\[_TOSP_]] 這種格式
+          // https://github.com/orgs/remarkjs/discussions/1258
+          if (parsed.includes('\\[\\[_TOSP_]]')) {
+            parsed = parsed.replace('\\[\\[_TOSP_]]', '[[_TOSP_]]');
+          }
+
           break;
 
         default:
