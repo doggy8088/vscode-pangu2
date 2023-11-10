@@ -5,6 +5,7 @@ src/**
 tsconfig.json
 tslint.json
 PUBLISH.md
+DEBUG.md
 package-lock.json
 node_modules/**
 images/**
