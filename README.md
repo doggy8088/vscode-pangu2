@@ -10,6 +10,9 @@
 * 支援將**整份文件**加入盤古之白
 * 支援 **Markdown** 文件加入盤古之白
   * 支援 GFM (GitHub Flavored Markdown) 格式
+  * 支援 Azure DevOps Wikis 的專屬語法
+    * `[[_TOC_]]`
+    * `[[_TOSP_]]`
   * 支援文件開頭的 YAML, TOML 格式
   * 可自動判斷 Inline Code、粗體、斜體、刪除線與文字之間的空白判斷
 * 支援儲存文件時自動加入盤古之白 (預設並未啟用)
