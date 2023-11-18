@@ -2,6 +2,12 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.7.0 - 2023-11-18
+
+* Support for [HackMD](https://hackmd.io/)-specific syntax
+  * `[TOC]`
+  * [toc文章目錄生產](https://hackmd.io/@chiaoshin369/Shinbook/https%3A%2F%2Fhackmd.io%2F%40chiaoshin369%2Fhackmd#toc%E6%96%87%E7%AB%A0%E7%9B%AE%E9%8C%84%E7%94%9F%E7%94%A2)
+
 ## 0.6.1 - 2023-11-11
 
 * Update `README.md`

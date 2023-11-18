@@ -58,14 +58,27 @@ function addSpace(
 
           // TODO: 還不知道怎樣避免 remark 將 [[_TOC_]] 跳脫成 \[\[_TOC_]] 這種格式
           // https://github.com/orgs/remarkjs/discussions/1258
+          // Support for AzureDevOpsWiki-specific syntax
+          // https://learn.microsoft.com/en-us/azure/devops/project/wiki/wiki-markdown-guidance?view=azure-devops&WT.mc_id=DT-MVP-4015686#table-of-contents-toc-for-wiki-pages
           if (parsed.includes('\\[\\[_TOC_]]')) {
             parsed = parsed.replace('\\[\\[_TOC_]]', '[[_TOC_]]');
           }
 
           // TODO: 還不知道怎樣避免 remark 將 [[_TOSP_]] 跳脫成 \[\[_TOSP_]] 這種格式
           // https://github.com/orgs/remarkjs/discussions/1258
+          // Support for AzureDevOpsWiki-specific syntax
+          // https://learn.microsoft.com/en-us/azure/devops/project/wiki/wiki-markdown-guidance?view=azure-devops&WT.mc_id=DT-MVP-4015686#add-a-subpages-table
           if (parsed.includes('\\[\\[_TOSP_]]')) {
             parsed = parsed.replace('\\[\\[_TOSP_]]', '[[_TOSP_]]');
+          }
+
+          // TODO: 還不知道怎樣避免 remark 將 [[_TOC_]] 跳脫成 \[\[_TOC_]] 這種格式
+          // https://github.com/orgs/remarkjs/discussions/1258
+          // Support for HackMD-specific syntax
+          // toc文章目錄生產
+          // https://hackmd.io/@chiaoshin369/Shinbook/https%3A%2F%2Fhackmd.io%2F%40chiaoshin369%2Fhackmd#toc%E6%96%87%E7%AB%A0%E7%9B%AE%E9%8C%84%E7%94%9F%E7%94%A2
+          if (parsed.toLowerCase().includes('\\[toc]')) {
+            parsed = parsed.replace(/\\\[TOC\]/i, '[TOC]');
           }
 
           break;
