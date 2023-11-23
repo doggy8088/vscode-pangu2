@@ -2,6 +2,11 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.8.0 - 2023-11-24
+
+* 修正一個小錯誤
+  * 解決當 Inline Text 與 Text 之間的空白判斷可能會導致增加多餘空白的問題
+
 ## 0.7.0 - 2023-11-18
 
 * Support for [HackMD](https://hackmd.io/)-specific syntax

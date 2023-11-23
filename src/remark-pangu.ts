@@ -43,17 +43,22 @@ export default function remarkPangu(logger: any) {
             logger.appendLine(
               `nextNode.type: ${nextNode.type}, nextNode.value: ${nextNode.value}`
             );
-            let combineText = currNode.value + nextNode.value;
+            let combineText = currNode.value + nextNode.value[0];
             let pangu_rized = pangu.spacing(combineText);
-            if (combineText !== pangu_rized) {
+            logger.appendLine('--> ' + combineText);
+            logger.appendLine('==> ' + pangu_rized);
+          if (combineText !== pangu_rized) {
               currNode.value = currNode.value + ' ';
             }
           } else if (isInlineType(currNode.type) && nextNode.type == 'text') {
             logger.appendLine(
               `currNode.type: ${currNode.type}, currNode.value: ${currNode.value}`
             );
-            let combineText = currNode.value + nextNode.value;
+            let lastCharacter = currNode.value[currNode.value.length - 1];
+            let combineText = lastCharacter + nextNode.value;
             let pangu_rized = pangu.spacing(combineText);
+            logger.appendLine('--> ' + combineText);
+            logger.appendLine('==> ' + pangu_rized);
             if (combineText !== pangu_rized) {
               nextNode.value = ' ' + nextNode.value;
             }

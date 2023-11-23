@@ -11,5 +11,5 @@
 2. 發行套件
 
     ```sh
-    vsce publish -i pangu2-0.7.0.vsix
+    vsce publish -i pangu2-0.8.0.vsix
     ```
