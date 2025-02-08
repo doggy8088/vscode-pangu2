@@ -116,3 +116,18 @@ iframe
 <iframe src="https://www.youtube.com/embed/DgDNs6X0FDk" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
 </div>
 ```
+
+LLM 1
+
+現今的開源「Deep Research」應用通常結合**大型語言模型（LLM）與檢索擴增生成 (RAG)技術，透過代理 (Agent)**執行網
+
+LLM 2
+
+1. **部署環境設置：**
+   - **現有穩定版本：**目前運行版本的應用部署需要保持2個Pod。
+   - **新版本：**新版本的應用需要逐步引導部分流量，最終部署2個Pod。
+
+2. **部署策略：**
+   - 採用金絲雀部署策略，逐步將部分流量引導至新版本的Pod。
+   - 在新版本部署的初期，只引導少量流量，觀察系統穩定性和性能。
+   - 若新版本運行良好，逐步增加流量，最終達到新版本的Pod數量為2。

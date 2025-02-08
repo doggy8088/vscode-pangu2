@@ -2,6 +2,15 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.9.0 - 2025-02-08
+
+* 增加處理 Markdown 文件中的全形括號問題
+  * 全部改為半形括號
+* 處理 LLM 常見的輸出問題
+  * 解決兩個很常見的 Markdown 格式錯誤
+    * `內容，**內容（Content）**內容` 換成 `內容，**內容（Content）** 內容`
+    * `1. **標題：**內容` 換成 `1. **標題**：內容`
+
 ## 0.8.0 - 2023-11-24
 
 * 修正一個小錯誤

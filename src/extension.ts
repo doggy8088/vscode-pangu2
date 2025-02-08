@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkPangu from './remark-pangu.js';
+import remarkAzureDevOpsWiki from './remark-azure-devops-wiki.js';
 
 let logger: vscode.OutputChannel;
 
@@ -44,17 +45,42 @@ function addSpace(
       let txt: string = d.getText(new vscode.Range(sel[x].start, sel[x].end));
       switch (d.languageId) {
         case 'markdown':
+
+          //#region 處理 LLM 常見的輸出問題
+
+          // 使用正則表達式逐一取代每一組對稱的左右括號，處理同一行中的多組括號情況
+          const lines = txt.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            lines[i] = lines[i].replace(/（([^）]+)）/g, (match, content) => {
+              return '(' + content + ')';
+            });
+          }
+          txt = lines.join('\n');
+
+          // 內容，**內容（Content）**內容
+          if (/[\)）]\*\*[^\p{P}]/u.test(txt)) {
+            txt = txt.replace(/([\)）]\*\*)([^\p{P}])/gu, '$1 $2');
+          }
+          // 1. **標題：**內容
+          if (/[:：]\*\*[^\p{P}]/u.test(txt)) {
+            txt = txt.replace(/([:：])(\*\*)([^\p{P}])/gu, '$2$1$3');
+          }
+
+          //#endregion
+
           parsed = unified()
             .use(remarkParse)
             .use(remarkGfm)
             .use(remarkFrontmatter, ['yaml', 'toml'])
             .use(remarkPangu(logger))
+            // .use(remarkAzureDevOpsWiki(logger))
             .use(remarkStringify, {
               // https://github.com/remarkjs/remark/tree/main/packages/remark-stringify#options
               emphasis: '_',
               rule: '-',
             })
-            .processSync(txt).toString();
+            .processSync(txt)
+            .toString();
 
           // TODO: 還不知道怎樣避免 remark 將 [[_TOC_]] 跳脫成 \[\[_TOC_]] 這種格式
           // https://github.com/orgs/remarkjs/discussions/1258
