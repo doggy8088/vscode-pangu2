@@ -1,0 +1,36 @@
+# 處理 LLM 常見的輸出問題
+
+處理 LLM 常見的輸出問題時，有些錯誤的格式很常見，主要違反了 [CommonMark Spec v0.31.2](https://spec.commonmark.org/0.31.2/) 規格的 [delimiter run](https://spec.commonmark.org/0.31.2/#delimiter-run) 分隔字元部分。
+
+> First, some definitions. A delimiter run is either a sequence of one or more * characters that is not preceded or followed by a non-backslash-escaped * character, or a sequence of one or more _ characters that is not preceded or followed by a non-backslash-escaped _ character.
+>
+> A left-flanking delimiter run is a delimiter run that is (1) not followed by Unicode whitespace, and either (2a) not followed by a Unicode punctuation character, or (2b) followed by a Unicode punctuation character and preceded by Unicode whitespace or a Unicode punctuation character. For purposes of this definition, the beginning and the end of the line count as Unicode whitespace.
+>
+> A right-flanking delimiter run is a delimiter run that is (1) not preceded by Unicode whitespace, and either (2a) not preceded by a Unicode punctuation character, or (2b) preceded by a Unicode punctuation character and followed by Unicode whitespace or a Unicode punctuation character. For purposes of this definition, the beginning and the end of the line count as Unicode whitespace.
+
+翻譯如下：
+
+> 首先，給出一些定義。
+>
+> **定界符序列（delimiter run）**
+> 定界符序列指的是滿足下列條件之一的字符序列：
+> - 由一個或多個 `*` 字符連續構成，且該序列的前後都**沒有**緊鄰未經反斜線（`\`）轉義的 `*` 字符；
+> - 或由一個或多個 `_` 字符連續構成，且該序列的前後都**沒有**緊鄰未經反斜線轉義的 `_` 字符。
+>
+> **左側鄰接定界符序列（left‐flanking delimiter run）**
+> 左側鄰接定界符序列指的是一個定界符序列，並滿足以下條件：
+> 1. 該序列後方不緊跟 Unicode 空白字符；
+> 2. 且必須滿足下列其中之一：
+>    - (2a) 後方不緊跟 Unicode 標點符號；
+>    - (2b) 如果後方緊跟 Unicode 標點符號，則該標點符號的前方必須是 Unicode 空白字符或另一個 Unicode 標點符號。
+>
+> 在此定義中，行首與行尾均視為 Unicode 空白字符。
+>
+> **右側鄰接定界符序列（right‐flanking delimiter run）**
+> 右側鄰接定界符序列指的是一個定界符序列，並滿足以下條件：
+> 1. 該序列前方不緊跟 Unicode 空白字符；
+> 2. 且必須滿足下列其中之一：
+>    - (2a) 前方不緊跟 Unicode 標點符號；
+>    - (2b) 如果前方緊跟 Unicode 標點符號，則該標點符號的後方必須是 Unicode 空白字符或另一個 Unicode 標點符號。
+>
+> 同樣，在此定義中，行首與行尾均視為 Unicode 空白字符。
