@@ -77,6 +77,7 @@ function addSpace(
             .use(remarkStringify, {
               // https://github.com/remarkjs/remark/tree/main/packages/remark-stringify#options
               emphasis: '_',
+              bullet: '-',
               rule: '-',
             })
             .processSync(txt)

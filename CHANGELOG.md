@@ -2,6 +2,10 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.9.1 - 2025-04-17
+
+* 項目清單改用 `-` 符號
+
 ## 0.9.0 - 2025-02-08
 
 * 增加處理 Markdown 文件中的全形括號問題
