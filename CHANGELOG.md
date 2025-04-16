@@ -2,6 +2,11 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.9.2 - 2025-04-17
+
+* 建立 GitHub Actions CI/CD 佇列，提升自動化建構與部署流程
+* 刪除 Preview 字樣
+
 ## 0.9.1 - 2025-04-17
 
 * 項目清單改用 `-` 符號

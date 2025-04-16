@@ -1,0 +1,52 @@
+name: 發布 VS Code 擴充套件
+
+on:
+  push:
+    branches: [ main ]
+    # tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 建構與發布
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安裝相依套件
+        run: npm ci
+
+      - name: 打包擴充功能
+        run: npx -y vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
+
+      - name: 讀取版本
+        id: package_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: 建立 Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          name: 盤古之白 v${{ steps.package_version.outputs.version }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', steps.package_version.outputs.version) }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: pangu2-${{ steps.package_version.outputs.version }}.vsix
+
+      - name: 發布到 VS Code Marketplace
+        if: success()
+        run: npx -y vsce publish --packagePath pangu2-${{ steps.package_version.outputs.version }}.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
