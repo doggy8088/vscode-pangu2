@@ -39,7 +39,7 @@
 2. 發行套件
 
     ```sh
-    npx @vscode/vsce publish --packagePath pangu2-0.9.3.vsix
+    npx @vscode/vsce publish --packagePath pangu2-0.9.4.vsix
     ```
 
     或者直接發行而不先封裝：

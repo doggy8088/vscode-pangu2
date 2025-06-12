@@ -2,7 +2,7 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
-## 0.9.3 - 2025-06-12
+## 0.9.4 - 2025-06-12
 
 * 新增 `pangu2.enableLooseFormatting` 設定選項
   * 啟用鬆散格式可減少 Markdown 中不必要的字元跳脫
