@@ -2,7 +2,7 @@
   "name": "pangu2",
   "displayName": "盤古之白",
   "description": "這個擴充套件會自動替你在文件中所有的中文字和半形的英文、數字、符號之間插入空白。",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "preview": false,
   "publisher": "doggy8088",
   "icon": "icon.png",
@@ -71,6 +71,12 @@
             ".txt"
           ],
           "description": "請設定自定義的副檔名以在文字儲存時自動套用盤古之白，例如：.md、.txt 或 * 等等。預設僅套用 .txt 文件。"
+        },
+        "pangu2.enableLooseFormatting": {
+          "type": "boolean",
+          "default": false,
+          "title": "啟用鬆散格式",
+          "description": "啟用鬆散格式可減少 Markdown 中不必要的字元跳脫，例如 _ 和 [ 符號。預設為 false，會保持嚴格的 Markdown 格式。"
         }
       }
     }
