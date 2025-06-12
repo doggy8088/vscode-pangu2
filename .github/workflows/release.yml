@@ -26,7 +26,7 @@ jobs:
         run: npm ci
 
       - name: 打包擴充功能
-        run: npx @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
+        run: npx -y @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
 
       - name: 讀取版本
         id: package_version
@@ -46,6 +46,6 @@ jobs:
 
       - name: 發布到 VS Code Marketplace
         if: success()
-        run: npx @vscode/vsce publish --packagePath pangu2-${{ steps.package_version.outputs.version }}.vsix
+        run: npx -y @vscode/vsce publish --packagePath pangu2-${{ steps.package_version.outputs.version }}.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
