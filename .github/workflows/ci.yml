@@ -1,0 +1,30 @@
+name: 持續整合
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: 建構測試
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安裝相依套件
+        run: npm ci
+
+      - name: 建構專案
+        run: npm run esbuild
+
+      - name: 打包擴充功能（測試）
+        run: npx @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
