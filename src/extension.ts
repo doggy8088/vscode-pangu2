@@ -30,9 +30,137 @@ export function activate(ctx: vscode.ExtensionContext) {
     )
   );
   ctx.subscriptions.push(new Watcher());
+
+  // Register language model tool for GitHub Copilot integration
+  if (vscode.lm && vscode.lm.registerTool) {
+    const panguTool = vscode.lm.registerTool('pangu_spacing', {
+      displayName: '盤古之白文字間距調整',
+      description: '為中英文混合文本自動添加適當的空格，改善文檔的可讀性。支持 Markdown 格式和純文本。',
+      parametersSchema: {
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            description: '需要處理的文本內容'
+          },
+          languageId: {
+            type: 'string',
+            description: '文檔語言類型 (如 "markdown", "text" 等)',
+            default: 'text'
+          }
+        },
+        required: ['text']
+      }
+    }, async (request, token) => {
+      try {
+        const { text, languageId = 'text' } = request.parameters;
+        
+        if (!text || typeof text !== 'string') {
+          throw new Error('需要提供有效的文本內容');
+        }
+
+        logger.appendLine(`Language Model Tool 收到請求：處理 ${text.length} 字符的 ${languageId} 文本`);
+        
+        const processedText = processTextWithPangu(text, languageId);
+        
+        return {
+          content: processedText
+        };
+      } catch (error) {
+        logger.appendLine(`Language Model Tool 錯誤：${error}`);
+        throw error;
+      }
+    });
+    
+    ctx.subscriptions.push(panguTool);
+    logger.appendLine('Language Model Tool "pangu_spacing" 已註冊');
+  } else {
+    logger.appendLine('Language Model API 不可用，跳過工具註冊');
+  }
 }
 
 export function deactivate() {}
+
+/**
+ * Process text with Pangu spacing for Language Model Tool
+ * @param text The text content to process
+ * @param languageId The language identifier (e.g., 'markdown', 'text')
+ * @returns Processed text with proper spacing
+ */
+function processTextWithPangu(text: string, languageId: string = 'text'): string {
+  let processed: string = '';
+  
+  switch (languageId) {
+    case 'markdown':
+      // Get configuration for loose formatting
+      const config = vscode.workspace.getConfiguration('pangu2');
+      const enableLooseFormatting = config.get('enableLooseFormatting', false);
+
+      let txt = text;
+
+      //#region 處理 LLM 常見的輸出問題
+      // 使用正則表達式逐一取代每一組對稱的左右括號，處理同一行中的多組括號情況
+      const lines = txt.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        lines[i] = lines[i].replace(/（([^）]+)）/g, (match, content) => {
+          return '(' + content + ')';
+        });
+      }
+      txt = lines.join('\n');
+
+      // 內容，**內容（Content）**內容
+      if (/[\)）]\*\*[^\p{P}]/u.test(txt)) {
+        txt = txt.replace(/([\)）]\*\*)([^\p{P}])/gu, '$1 $2');
+      }
+      // 1. **標題：**內容
+      if (/[:：]\*\*[^\p{P}]/u.test(txt)) {
+        txt = txt.replace(/([:：])(\*\*)([^\p{P}])/gu, '$2$1$3');
+      }
+      //#endregion
+
+      processed = unified()
+        .use(remarkParse)
+        .use(remarkGfm)
+        .use(remarkFrontmatter, ['yaml', 'toml'])
+        .use(remarkPangu(logger))
+        .use(remarkStringify, {
+          emphasis: '_',
+          bullet: '-',
+          rule: '-',
+        })
+        .processSync(txt)
+        .toString();
+
+      // Handle special syntax escaping issues
+      if (processed.includes('\\[\\[_TOC_]]')) {
+        processed = processed.replace('\\[\\[_TOC_]]', '[[_TOC_]]');
+      }
+      if (processed.includes('\\[\\[_TOSP_]]')) {
+        processed = processed.replace('\\[\\[_TOSP_]]', '[[_TOSP_]]');
+      }
+      if (processed.toLowerCase().includes('\\[toc]')) {
+        processed = processed.replace(/\\\[TOC\]/i, '[TOC]');
+      }
+
+      // Apply loose formatting if enabled
+      if (enableLooseFormatting) {
+        processed = applyLooseFormatting(processed);
+      }
+
+      break;
+
+    default:
+      processed = pangu.spacing(text);
+      break;
+  }
+
+  // Preserve original line ending style
+  if (text.endsWith('\n') === false) {
+    processed = processed.trimEnd();
+  }
+
+  return processed;
+}
 
 /**
  * Apply loose formatting to reduce unnecessary escaping
