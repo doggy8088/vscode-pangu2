@@ -40,7 +40,7 @@
 
 ![images](images/settings.jpg)
 
-主要設定有兩個，分別是：
+主要設定有三個，分別是：
 
 1. `pangu2.autoAddSpaceOnSave` (boolean)
 
@@ -54,6 +54,16 @@
 
     > 注意：此設定僅在 `pangu2.autoAddSpaceOnSave` 為 `true` 時才會生效。
 
+3. `pangu2.enableLooseFormatting` (boolean)
+
+    啟用鬆散格式可減少 Markdown 中不必要的字元跳脫。預設為 `false`。
+
+    當啟用時，會減少以下字元的跳脫：
+    - `_` 符號：例如 `hello\_world` 會變成 `hello_world`
+    - `[` 符號：例如 `## \[文字]` 會變成 `## [文字]`
+
+    > 注意：此設定僅影響 Markdown 文件的處理。
+
 設定範例如下：
 
 ```js
@@ -62,7 +72,8 @@
   "pangu2.autoAddSpaceOnSaveFileExtensions": [
     ".txt",
     ".md"
-  ]
+  ],
+  "pangu2.enableLooseFormatting": true
 }
 ```
 

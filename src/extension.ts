@@ -34,6 +34,55 @@ export function activate(ctx: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
+/**
+ * Apply loose formatting to reduce unnecessary escaping
+ * @param text The markdown text processed by remark
+ * @returns Text with reduced escaping
+ */
+function applyLooseFormatting(text: string): string {
+  let result = text;
+
+  // Handle underscore escaping - be more permissive about unescaping
+  // Only keep escaping for obvious emphasis patterns with surrounding whitespace
+  result = result.replace(/\\(_)/g, (match, underscore, offset, string) => {
+    const beforeChar = offset > 0 ? string[offset - 1] : '';
+    const afterChar = offset + 2 < string.length ? string[offset + 2] : '';
+    
+    // Unescape if it's clearly in identifier/filename context (alphanumeric on both sides)
+    if (/[a-zA-Z0-9]/.test(beforeChar) && /[a-zA-Z0-9]/.test(afterChar)) {
+      return underscore;
+    }
+    
+    // Unescape if it's at the start/end of a word (not surrounded by non-whitespace on both sides)
+    if (!/\S/.test(beforeChar) || !/\S/.test(afterChar)) {
+      return underscore;
+    }
+    
+    // For everything else in loose mode, also unescape (be permissive)
+    return underscore;
+  });
+
+  // Handle square bracket escaping - unescape for headings and simple cases
+  result = result.replace(/\\(\[)/g, (match, bracket, offset, string) => {
+    // Always unescape brackets at the start of headings
+    const beforeContext = string.substring(Math.max(0, offset - 10), offset + 2);
+    if (/^#+ \\?\[/.test(beforeContext.trim())) {
+      return bracket;
+    }
+    
+    // Unescape if not followed by a closing bracket and link pattern
+    const afterContext = string.substring(offset + 2, Math.min(string.length, offset + 50));
+    if (!afterContext.match(/^[^\]]*\]\s*[\(\[]/)) {
+      return bracket;
+    }
+    
+    // Keep escaping for potential link patterns
+    return match;
+  });
+
+  return result;
+}
+
 function addSpace(
   e: vscode.TextEditor,
   d: vscode.TextDocument,
@@ -45,6 +94,9 @@ function addSpace(
       let txt: string = d.getText(new vscode.Range(sel[x].start, sel[x].end));
       switch (d.languageId) {
         case 'markdown':
+          // Get configuration for loose formatting
+          const config = vscode.workspace.getConfiguration('pangu2');
+          const enableLooseFormatting = config.get('enableLooseFormatting', false);
 
           //#region 處理 LLM 常見的輸出問題
 
@@ -106,6 +158,11 @@ function addSpace(
           // https://hackmd.io/@chiaoshin369/Shinbook/https%3A%2F%2Fhackmd.io%2F%40chiaoshin369%2Fhackmd#toc%E6%96%87%E7%AB%A0%E7%9B%AE%E9%8C%84%E7%94%9F%E7%94%A2
           if (parsed.toLowerCase().includes('\\[toc]')) {
             parsed = parsed.replace(/\\\[TOC\]/i, '[TOC]');
+          }
+
+          // Apply loose formatting if enabled
+          if (enableLooseFormatting) {
+            parsed = applyLooseFormatting(parsed);
           }
 
           break;
