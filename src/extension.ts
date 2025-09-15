@@ -80,6 +80,46 @@ function applyLooseFormatting(text: string): string {
     return match;
   });
 
+  // Handle tilde escaping - only unescape single tildes, preserve double tildes for strikethrough
+  result = result.replace(/\\(~)/g, (match, tilde, offset, string) => {
+    // Look for the pattern of escaped tildes: \~\~ at the start and \~\~ at the end
+    // We need to preserve these for strikethrough syntax
+    
+    // Check if this is the start of a double tilde (\~\~)
+    const nextChars = string.substring(offset + 2, offset + 4);
+    if (nextChars === '\\~') {
+      // This is the first tilde in \~\~ - keep it escaped if there's a matching \~\~ later
+      const restOfString = string.substring(offset + 4);
+      if (restOfString.includes('\\~\\~')) {
+        return match; // Keep escaped, this is strikethrough syntax
+      }
+    }
+    
+    // Check if this is the second tilde in a starting double tilde (\~\~)
+    const prevChars = string.substring(offset - 2, offset);
+    if (prevChars === '\\~') {
+      // This is the second tilde in \~\~ - keep it escaped if there's a matching \~\~ later
+      const restOfString = string.substring(offset + 2);
+      if (restOfString.includes('\\~\\~')) {
+        return match; // Keep escaped, this is strikethrough syntax
+      }
+    }
+    
+    // Check if this is part of a closing double tilde
+    const afterChars = string.substring(offset + 2, offset + 4);
+    const beforeTwoChars = string.substring(offset - 2, offset);
+    if (afterChars === '\\~' || beforeTwoChars === '\\~') {
+      // Look backwards to see if there's an opening \~\~
+      const textBefore = string.substring(0, offset - 2);
+      if (textBefore.includes('\\~\\~')) {
+        return match; // Keep escaped, this is part of strikethrough syntax
+      }
+    }
+    
+    // For single tildes that are not part of strikethrough, unescape them
+    return tilde;
+  });
+
   return result;
 }
 
