@@ -4,7 +4,7 @@ All notable changes to the **盤古之白** will be documented in this file.
 
 ## 0.9.5 - 2025-09-15
 
-* 版本更新與維護
+* 解決 `~` 符號被誤跳脫的問題（例如：...）
 
 ## 0.9.4 - 2025-06-12
 
