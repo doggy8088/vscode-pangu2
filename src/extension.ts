@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { pangu } from './Pangu.js';
+import { PanguTool } from './PanguTool.js';
 
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
@@ -29,6 +30,17 @@ export function activate(ctx: vscode.ExtensionContext) {
       addSpaceWholeDocument
     )
   );
+  
+  // 註冊 Language Model Tool
+  try {
+    ctx.subscriptions.push(
+      vscode.lm.registerTool('pangu2_format_text', new PanguTool())
+    );
+    logger.appendLine('盤古之白 Language Model Tool 已註冊');
+  } catch (error) {
+    logger.appendLine(`註冊 Language Model Tool 失敗: ${error}`);
+  }
+  
   ctx.subscriptions.push(new Watcher());
 }
 

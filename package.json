@@ -11,8 +11,11 @@
     "url": "https://github.com/doggy8088/vscode-pangu2"
   },
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.95.0"
   },
+  "enabledApiProposals": [
+    "lmTools"
+  ],
   "license": "MIT",
   "galleryBanner": {
     "color": "#EBF0F7",
@@ -38,6 +41,32 @@
       {
         "command": "pangu2.add_space_whole",
         "title": "Pangu: 加入盤古之白 (整份文件)"
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "pangu2_format_text",
+        "displayName": "盤古之白格式化工具",
+        "modelDescription": "Automatically formats Chinese text by adding appropriate spaces between Chinese characters and English/numeric characters. This tool applies the Pangu spacing rules to improve readability of mixed Chinese-English text. It supports both plain text and Markdown documents, preserving formatting while optimizing character spacing.",
+        "userDescription": "自動在中文字和英文、數字、符號之間插入空白，改善混合中英文本的可讀性",
+        "toolReferenceName": "pangu",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-text)",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The text content to be formatted with Pangu spacing rules. Can be plain text or Markdown."
+            },
+            "enableLooseFormatting": {
+              "type": "boolean",
+              "description": "Enable loose formatting to reduce unnecessary escaping in Markdown (e.g., _ and [ symbols). Default is false.",
+              "default": false
+            }
+          },
+          "required": ["text"]
+        }
       }
     ],
     "menus": {
