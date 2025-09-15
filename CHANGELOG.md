@@ -2,6 +2,17 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.1.0 - 2025-09-24
+
+* 新增 GitHub Copilot Chat 整合功能 🎉
+  * 支援透過 `#pangu` 工具在 Copilot Chat 中直接呼叫盤古之白功能
+  * 可在撰寫大量 prompt 時，直接在對話結尾呼叫格式化功能
+  * 支援純文字和 Markdown 格式化
+  * 支援鬆散格式化選項參數
+  * 實作 VS Code LanguageModelTool API
+* 升級最低 VS Code 版本需求至 1.95.0
+* 啟用 `lmTools` proposed API 支援
+
 ## 1.0.0 - 2025-09-22
 
 * 修正 LaTeX 數學公式格式問題
@@ -16,6 +27,7 @@ All notable changes to the **盤古之白** will be documented in this file.
 ## 0.9.5 - 2025-09-15
 
 * 解決 `~` 符號被誤跳脫的問題（例如：...）
+
 
 ## 0.9.4 - 2025-06-12
 
