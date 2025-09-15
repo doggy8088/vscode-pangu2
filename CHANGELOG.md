@@ -2,6 +2,10 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 0.9.5 - 2025-09-15
+
+* 版本更新與維護
+
 ## 0.9.4 - 2025-06-12
 
 * 新增 `pangu2.enableLooseFormatting` 設定選項
