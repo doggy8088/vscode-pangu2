@@ -8,6 +8,7 @@
 
 * 支援將**選取文字**加入盤古之白
 * 支援將**整份文件**加入盤古之白
+* 支援透過 **GitHub Copilot Chat** 呼叫盤古之白功能 ⭐ **NEW!**
 * 支援 **Markdown** 文件加入盤古之白
   * 支援 GFM (GitHub Flavored Markdown) 格式
   * 支援 Azure DevOps Wikis 的專屬語法
@@ -27,6 +28,10 @@
 
 ## 使用方式
 
+本工具提供兩種使用方式：
+
+### 1. 傳統命令模式
+
 本工具主要有兩個命令：
 
 1. 將編輯器中的**選取範圍**加入盤古之白 (`pangu2.add_space_selection`)
@@ -41,6 +46,48 @@
     反之，沒有選取文字時，預設只會顯示 `Pangu: 加入盤古之白 (整份文件)` 在右鍵選單中。
 
 2. 在編輯器中按下 `F1` 後輸入 `pangu` 搜尋命令，有 `Pangu: 加入盤古之白 (選取範圍)` 或 `Pangu: 加入盤古之白 (整份文件)` 可以選擇。
+
+### 2. GitHub Copilot Chat 整合 ⭐ **NEW!**
+
+現在你可以透過 GitHub Copilot Chat 直接呼叫盤古之白功能：
+
+1. 開啟 GitHub Copilot Chat（使用 `Ctrl+Shift+I` 或點擊側邊欄的 Copilot 圖示）
+
+2. 在對話中使用 `#pangu` 工具來格式化文本：
+
+    ```txt
+    請幫我用 #pangu 格式化這段文字：
+    這是一個test測試，包含123數字和English單詞。
+    ```
+
+3. 你也可以啟用鬆散格式化模式來減少 Markdown 中的跳脫字元：
+
+    ```txt
+    使用 #pangu 工具格式化以下 Markdown 內容，並啟用鬆散格式化：
+    # 標題Test
+    這是**粗體test**的例子。
+    ```
+
+**優點**：
+
+* 可以在撰寫大量 prompt 時，直接在對話結尾呼叫格式化功能
+* 不需要切換到編輯器或使用滑鼠右鍵
+* 支援批次處理多段文字
+* 可以搭配其他 AI 功能一起使用
+
+## 系統需求
+
+### 基本功能
+
+* Visual Studio Code 1.95.0 或更新版本
+
+### GitHub Copilot Chat 整合
+
+* Visual Studio Code 1.95.0 或更新版本
+* GitHub Copilot 訂閱
+* GitHub Copilot Chat 擴充套件
+
+> **注意**：GitHub Copilot Chat 整合功能使用了 VS Code 的實驗性 API。如果遇到問題，請確保你的 VS Code 版本是最新的。
 
 ## 進階功能
 
