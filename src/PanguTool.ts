@@ -12,15 +12,15 @@ export interface IPanguToolParameters {
   enableLooseFormatting?: boolean;
 }
 
-export class PanguTool implements vscode.LanguageModelTool {
+export class PanguTool implements vscode.LanguageModelTool<IPanguToolParameters> {
   async invoke(
-    options: vscode.LanguageModelToolInvocationOptions,
+    options: vscode.LanguageModelToolInvocationOptions<IPanguToolParameters>,
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     try {
-      const params = options.parameters as IPanguToolParameters;
+      const params = options.input as IPanguToolParameters;
       const { text, enableLooseFormatting = false } = params;
-      
+
       if (!text || typeof text !== 'string') {
         throw new Error('請提供有效的文本內容進行格式化');
       }
@@ -46,7 +46,7 @@ export class PanguTool implements vscode.LanguageModelTool {
   private formatText(text: string, enableLooseFormatting: boolean): string {
     // 檢測是否為 Markdown 內容
     const isMarkdown = this.isMarkdownContent(text);
-    
+
     if (isMarkdown) {
       return this.formatMarkdown(text, enableLooseFormatting);
     } else {
@@ -139,17 +139,17 @@ export class PanguTool implements vscode.LanguageModelTool {
     result = result.replace(/\\(_)/g, (match, underscore, offset, string) => {
       const beforeChar = offset > 0 ? string[offset - 1] : '';
       const afterChar = offset + 2 < string.length ? string[offset + 2] : '';
-      
+
       // 如果在識別符/檔案名稱環境中取消跳脫（兩邊都是字母數字）
       if (/[a-zA-Z0-9]/.test(beforeChar) && /[a-zA-Z0-9]/.test(afterChar)) {
         return underscore;
       }
-      
+
       // 如果在字詞開始/結束處取消跳脫（不是兩邊都被非空白字元包圍）
       if (!/\S/.test(beforeChar) || !/\S/.test(afterChar)) {
         return underscore;
       }
-      
+
       // 在鬆散模式下，其他情況也取消跳脫（寬鬆）
       return underscore;
     });
@@ -161,13 +161,13 @@ export class PanguTool implements vscode.LanguageModelTool {
       if (/^#+ \\?\[/.test(beforeContext.trim())) {
         return bracket;
       }
-      
+
       // 如果後面沒有閉合方括號和連結模式則取消跳脫
       const afterContext = string.substring(offset + 2, Math.min(string.length, offset + 50));
       if (!afterContext.match(/^[^\]]*\]\s*[\(\[]/)) {
         return bracket;
       }
-      
+
       // 保留可能的連結模式的跳脫
       return match;
     });

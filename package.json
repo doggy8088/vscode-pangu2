@@ -13,9 +13,7 @@
   "engines": {
     "vscode": "^1.95.0"
   },
-  "enabledApiProposals": [
-    "lmTools"
-  ],
+
   "license": "MIT",
   "galleryBanner": {
     "color": "#EBF0F7",
