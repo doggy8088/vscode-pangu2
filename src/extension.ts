@@ -164,8 +164,8 @@ function addSpace(
             .use(remarkParse)
             .use(remarkGfm)
             .use(remarkFrontmatter, ['yaml', 'toml'])
+            .use(remarkAzureDevOpsWiki(logger))  // Enable Azure DevOps Wiki plugin BEFORE pangu
             .use(remarkPangu(logger))
-            // .use(remarkAzureDevOpsWiki(logger))
             .use(remarkStringify, {
               // https://github.com/remarkjs/remark/tree/main/packages/remark-stringify#options
               emphasis: '_',
