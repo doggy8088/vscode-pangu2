@@ -53,17 +53,12 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-            "text": {
-              "type": "string",
-              "description": "The text content to be formatted with Pangu spacing rules. Can be plain text or Markdown."
-            },
-            "enableLooseFormatting": {
-              "type": "boolean",
-              "description": "Enable loose formatting to reduce unnecessary escaping in Markdown (e.g., _ and [ symbols). Default is false.",
-              "default": false
-            }
+        "text": {
+          "type": "string",
+          "description": "The text content to be formatted with Pangu spacing rules. Can be plain text or Markdown. If not provided, the current editor selection or document will be used."
+        }
           },
-          "required": ["text"]
+          "required": []
         }
       }
     ],
