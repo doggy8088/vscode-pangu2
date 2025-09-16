@@ -20,10 +20,31 @@ export default function remarkPangu(logger: any) {
     };
   }
 
+  /**
+   * Check if text contains Azure DevOps Wiki syntax blocks that should be excluded from pangu spacing
+   * @param text The text to check
+   * @returns true if the text contains Azure DevOps Wiki syntax blocks
+   */
+  function containsAzureDevOpsWikiBlocks(text: string): boolean {
+    // Pattern to match Azure DevOps Wiki syntax: ::: type ... :::
+    // Supports various formats:
+    // - ::: mermaid (standard)
+    // - :::mermaid (no space)
+    // - ::: custom-type (hyphenated types)
+    // - ::: type with-params (types with parameters)
+    const azureDevOpsBlockPattern = /^:::\s*[\w-]+(?:\s+[^\n]*)?\s*[\s\S]*?^:::$/m;
+    return azureDevOpsBlockPattern.test(text);
+  }
+
   return () => {
     return (tree: Node) => {
       // STEP 1: 先處理所有 text 節點
       visit(tree, 'text', (node: any) => {
+        // Skip processing if the text contains Azure DevOps Wiki syntax blocks
+        if (containsAzureDevOpsWikiBlocks(node.value)) {
+          logger.appendLine(`Skipping Azure DevOps Wiki block: ${node.value.substring(0, 50)}...`);
+          return;
+        }
         node.value = pangu.spacing(node.value);
       });
 
@@ -38,6 +59,16 @@ export default function remarkPangu(logger: any) {
           let nextNode = node.children[index + 1];
 
           if (!nextNode) return;
+
+          // Skip processing if current or next node contains Azure DevOps Wiki syntax blocks
+          if (currNode.type === 'text' && containsAzureDevOpsWikiBlocks(currNode.value)) {
+            logger.appendLine(`Skipping paragraph processing for Azure DevOps Wiki block in current node`);
+            return;
+          }
+          if (nextNode.type === 'text' && containsAzureDevOpsWikiBlocks(nextNode.value)) {
+            logger.appendLine(`Skipping paragraph processing for Azure DevOps Wiki block in next node`);
+            return;
+          }
 
           if (currNode.type === 'text' && isInlineType(nextNode.type)) {
             logger.appendLine(
@@ -68,6 +99,11 @@ export default function remarkPangu(logger: any) {
             currNode.type === 'text' &&
             isInlineTypeWithChildren(nextNode.type)
           ) {
+            // Skip processing if current node contains Azure DevOps Wiki syntax blocks
+            if (containsAzureDevOpsWikiBlocks(currNode.value)) {
+              logger.appendLine(`Skipping inline processing for Azure DevOps Wiki block in current node`);
+              return;
+            }
             logger.appendLine(
               `nextNode.type: ${nextNode.type}, nextNode.value: ${nextNode.children[0].value}`
             );
@@ -80,6 +116,11 @@ export default function remarkPangu(logger: any) {
             isInlineTypeWithChildren(currNode.type) &&
             nextNode.type == 'text'
           ) {
+            // Skip processing if next node contains Azure DevOps Wiki syntax blocks
+            if (containsAzureDevOpsWikiBlocks(nextNode.value)) {
+              logger.appendLine(`Skipping inline processing for Azure DevOps Wiki block in next node`);
+              return;
+            }
             logger.appendLine(
               `currNode.type: ${currNode.type}, currNode.value: ${currNode.children[0].value}`
             );
