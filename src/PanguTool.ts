@@ -9,7 +9,6 @@ import { pangu } from './Pangu.js';
 
 export interface IPanguToolParameters {
   text: string;
-  enableLooseFormatting?: boolean;
 }
 
 export class PanguTool implements vscode.LanguageModelTool<IPanguToolParameters> {
@@ -19,7 +18,11 @@ export class PanguTool implements vscode.LanguageModelTool<IPanguToolParameters>
   ): Promise<vscode.LanguageModelToolResult> {
     try {
       const params = options.input as IPanguToolParameters;
-      const { text, enableLooseFormatting = false } = params;
+      const { text } = params;
+
+      // Get configuration for loose formatting
+      const config = vscode.workspace.getConfiguration('pangu2');
+      const enableLooseFormatting = config.get('enableLooseFormatting', false);
 
       if (!text || typeof text !== 'string') {
         throw new Error('請提供有效的文本內容進行格式化');
@@ -28,12 +31,12 @@ export class PanguTool implements vscode.LanguageModelTool<IPanguToolParameters>
       let formatted = this.formatText(text, enableLooseFormatting);
 
       // 如果原文本結尾不是斷行符號，就把格式化後的結尾斷行符號去掉
-      if (text.endsWith('\n') === false) {
-        formatted = formatted.trimEnd();
-      }
+      // if (text.endsWith('\n') === false) {
+      //   formatted = formatted.trimEnd();
+      // }
 
       const result = new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(`已完成盤古之白格式化：\n\n\`\`\`\n${formatted}\n\`\`\``)
+        new vscode.LanguageModelTextPart(formatted)
       ]);
 
       return result;
