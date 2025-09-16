@@ -58,7 +58,9 @@ export default function remarkPangu(logger: any) {
           let currNode = node.children[index];
           let nextNode = node.children[index + 1];
 
-          if (!nextNode) return;
+          if (!nextNode) {
+            return;
+          }
 
           if (currNode.type === 'text' && isInlineType(nextNode.type)) {
             logger.appendLine(
