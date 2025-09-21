@@ -2,7 +2,7 @@ name: 自動發布 VS Code 擴充套件
 
 on:
   push:
-    tags: [ 'v*' ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -25,27 +25,49 @@ jobs:
       - name: 安裝相依套件
         run: npm ci
 
-      - name: 打包擴充功能
-        run: npx -y @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
-
       - name: 讀取版本
         id: package_version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: 檢查標籤是否已存在
+        id: check_tag
+        run: |
+          TAG_NAME="v${{ steps.package_version.outputs.version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG_NAME already exists, skipping release"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG_NAME does not exist, proceeding with release"
+          fi
+
+      - name: 打包擴充功能
+        if: steps.check_tag.outputs.exists == 'false'
+        run: npx -y @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
+
+      - name: 建立標籤
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          TAG_NAME="v${{ steps.package_version.outputs.version }}"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
       - name: 建立 Release
         id: create_release
+        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
           name: 盤古之白 v${{ steps.package_version.outputs.version }}
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', steps.package_version.outputs.version) }}
+          tag_name: v${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
           files: pangu2-${{ steps.package_version.outputs.version }}.vsix
 
       - name: 發布到 VS Code Marketplace
-        if: success()
+        if: steps.check_tag.outputs.exists == 'false' && success()
         run: npx -y @vscode/vsce publish --packagePath pangu2-${{ steps.package_version.outputs.version }}.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
