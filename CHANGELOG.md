@@ -2,6 +2,17 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.0.0 - 2025-09-22
+
+* 修正 LaTeX 數學公式格式問題
+  * 防止 LaTeX 中的 `{number}` 模式被錯誤替換為 undefined
+  * 新增 LaTeX 測試案例以確保公式格式正確
+* 新增指令區塊保護功能
+  * 優化 Azure DevOps Wiki 語法處理
+  * 新增測試案例確保指令區塊不會被誤處理
+* 改善 GitHub Actions 工作流程
+  * 優化自動發布機制
+
 ## 0.9.5 - 2025-09-15
 
 * 解決 `~` 符號被誤跳脫的問題（例如：...）
