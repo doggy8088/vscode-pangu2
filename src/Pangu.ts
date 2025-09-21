@@ -210,7 +210,12 @@ class Pangu {
     // 還原網址
     newText = newText.replace(/{\d+}/g, (match) => {
       const number = parseInt(match.match(/\d+/)![0]);
-      return matchUrls[number];
+      // Only restore if this is a valid URL placeholder index
+      if (number < matchUrls.length && matchUrls[number] !== undefined) {
+        return matchUrls[number];
+      }
+      // Keep the original text if it's not a URL placeholder (e.g., LaTeX formulas)
+      return match;
     });
 
     // DEBUG
