@@ -1,24 +1,37 @@
 # 套件發行備註
 
+# 套件發行備註
+
 ## 自動發行 (推薦)
 
-本專案已設定 GitHub Actions 自動發行流程。當建立新的版本標籤時，會自動執行以下步驟：
+本專案已設定 GitHub Actions 自動發行流程。**當 main 分支有新的 commit 時，會自動檢查版本並執行發行流程**：
 
-1. 建構並封裝套件
-2. 建立 GitHub Release
-3. 發布到 VS Code Marketplace
+1. 自動讀取 `package.json` 中的版本號碼
+2. 檢查對應的版本標籤是否已存在
+3. 如果標籤不存在，則自動執行以下步驟：
+   - 建構並封裝套件
+   - 建立版本標籤 (例如: `v0.9.5`)
+   - 建立 GitHub Release
+   - 發布到 VS Code Marketplace
 
 ### 使用方式
 
 1. 更新 `package.json` 中的版本號碼
-2. 建立並推送版本標籤：
+2. 將變更推送到 main 分支：
 
     ```sh
-    git tag v0.9.4
-    git push origin v0.9.4
+    git add package.json
+    git commit -m "Bump version to 0.9.6"
+    git push origin main
     ```
 
-3. GitHub Actions 會自動執行發行流程
+3. GitHub Actions 會自動檢查版本並執行發行流程
+
+### 注意事項
+
+- 如果對應版本的標籤已存在，系統會跳過發行流程以避免重複發行
+- 版本號碼必須遵循語意化版本 (Semantic Versioning) 格式
+- 發行流程僅在版本標籤不存在時執行
 
 ### 手動觸發
 
