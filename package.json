@@ -88,7 +88,11 @@
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "test-compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "node tests/run-tests.mjs",
+    "test:simple": "node tests/simple-test-1.mjs",
+    "test:visual": "node tests/visual-test-2.mjs",
+    "test:quick": "node tests/quick-test-3.mjs"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",

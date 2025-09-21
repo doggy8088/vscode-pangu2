@@ -23,12 +23,33 @@ export default function remarkPangu(logger: any) {
   return () => {
     return (tree: Node) => {
       // STEP 1: 先處理所有 text 節點
-      visit(tree, 'text', (node: any) => {
+      visit(tree, 'text', (node: any, index: number, parent: any) => {
+        // 跳過被 Azure DevOps Wiki 標記的節點
+        if (parent && parent._azureDevOpsDirective) {
+          logger.appendLine(`Skipping text node in Azure DevOps directive: ${parent._directiveType}`);
+          return;
+        }
+        
+        // 檢查父節點的父節點是否被標記（處理嵌套情況）
+        let currentParent = parent;
+        while (currentParent) {
+          if (currentParent._azureDevOpsDirective) {
+            logger.appendLine(`Skipping text node in nested Azure DevOps directive: ${currentParent._directiveType}`);
+            return;
+          }
+          currentParent = currentParent.parent;
+        }
+        
         node.value = pangu.spacing(node.value);
       });
 
       // STEP 2: 再處理所有 paragraph 節點 (混合 text 與其他 inline 節點的情況)
       visit(tree, 'paragraph', (node: any) => {
+        // 跳過被 Azure DevOps Wiki 標記的節點
+        if (node._azureDevOpsDirective) {
+          logger.appendLine(`Skipping paragraph node in Azure DevOps directive: ${node._directiveType}`);
+          return;
+        }
         node.children.forEach((child: any, index: number) => {
           logger.appendLine('---');
           logger.appendLine(JSON.stringify(child));
@@ -37,7 +58,9 @@ export default function remarkPangu(logger: any) {
           let currNode = node.children[index];
           let nextNode = node.children[index + 1];
 
-          if (!nextNode) return;
+          if (!nextNode) {
+            return;
+          }
 
           if (currNode.type === 'text' && isInlineType(nextNode.type)) {
             logger.appendLine(
@@ -47,10 +70,10 @@ export default function remarkPangu(logger: any) {
             let pangu_rized = pangu.spacing(combineText);
             logger.appendLine('--> ' + combineText);
             logger.appendLine('==> ' + pangu_rized);
-          if (combineText !== pangu_rized) {
+            if (combineText !== pangu_rized) {
               currNode.value = currNode.value + ' ';
             }
-          } else if (isInlineType(currNode.type) && nextNode.type == 'text') {
+          } else if (isInlineType(currNode.type) && nextNode.type === 'text') {
             logger.appendLine(
               `currNode.type: ${currNode.type}, currNode.value: ${currNode.value}`
             );
@@ -78,7 +101,7 @@ export default function remarkPangu(logger: any) {
             }
           } else if (
             isInlineTypeWithChildren(currNode.type) &&
-            nextNode.type == 'text'
+            nextNode.type === 'text'
           ) {
             logger.appendLine(
               `currNode.type: ${currNode.type}, currNode.value: ${currNode.children[0].value}`
