@@ -17,7 +17,19 @@ export class PanguTool implements vscode.LanguageModelTool<IPanguToolParameters>
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     try {
-      const params = options.input as IPanguToolParameters;
+      // Debug logging to understand the invocation
+      console.log('PanguTool invoked with options:', {
+        parameters: options.parameters,
+        hasToolInvocationToken: !!options.toolInvocationToken
+      });
+
+      const params = options.parameters as IPanguToolParameters;
+      
+      // Handle case where parameters might be undefined or malformed
+      if (!params) {
+        throw new Error('沒有提供參數給盤古之白工具');
+      }
+
       const { text } = params;
 
       // Get configuration for loose formatting
@@ -25,8 +37,15 @@ export class PanguTool implements vscode.LanguageModelTool<IPanguToolParameters>
       const enableLooseFormatting = config.get('enableLooseFormatting', false);
 
       if (!text || typeof text !== 'string') {
-        throw new Error('請提供有效的文本內容進行格式化');
+        console.log('PanguTool error: Invalid text parameter:', { 
+          text, 
+          type: typeof text, 
+          params: JSON.stringify(params, null, 2) 
+        });
+        throw new Error('請提供有效的文本內容進行格式化。請確保使用正確的語法，例如：#pangu 要格式化的文字');
       }
+
+      console.log('PanguTool processing text of length:', text.length);
 
       let formatted = this.formatText(text, enableLooseFormatting);
 
