@@ -184,8 +184,58 @@ class Pangu {
     newText = newText.replace(FIX_SLASH_AS, '$1$2');
     newText = newText.replace(FIX_SLASH_AS_SLASH, '$1$2$3');
 
-    newText = newText.replace(CJK_LEFT_BRACKET, '$1 $2');
-    newText = newText.replace(RIGHT_BRACKET_CJK, '$1 $2');
+    newText = newText.replace(CJK_LEFT_BRACKET, (match, cjk, bracket, offset, string) => {
+      // Check if this bracket is part of an escape sequence
+      const prevCharIndex = offset - 1;
+      if (prevCharIndex >= 0 && string[prevCharIndex] === '\\') {
+        return match; // Keep original without space if preceded by backslash
+      }
+      
+      // Additional check: if this is a closing bracket, check if there's a matching escaped opening bracket
+      if (bracket === '>' || bracket === ']' || bracket === '}' || bracket === ')') {
+        const bracketPairs = { '>': '<', ']': '[', '}': '{', ')': '(' };
+        const openBracket = bracketPairs[bracket];
+        const beforeMatch = string.substring(0, offset);
+        
+        const escapedOpenIndex = beforeMatch.lastIndexOf(`\\${openBracket}`);
+        if (escapedOpenIndex !== -1) {
+          const contentBetween = beforeMatch.substring(escapedOpenIndex + 2);
+          // Make sure there's no unescaped closing bracket in between
+          const hasUnescapedClosing = contentBetween.includes(bracket) && !contentBetween.includes(`\\${bracket}`);
+          if (!hasUnescapedClosing) {
+            return match; // Keep original without space if part of escaped pair
+          }
+        }
+      }
+      
+      return `${cjk} ${bracket}`;
+    });
+    newText = newText.replace(RIGHT_BRACKET_CJK, (match, bracket, cjk, offset, string) => {
+      // Check if this bracket is part of an escape sequence
+      const prevCharIndex = offset - 1;
+      if (prevCharIndex >= 0 && string[prevCharIndex] === '\\') {
+        return match; // Keep original without space if preceded by backslash
+      }
+      
+      // Additional check: if this is a closing bracket, check if there's a matching escaped opening bracket
+      if (bracket === '>' || bracket === ']' || bracket === '}' || bracket === ')') {
+        const bracketPairs = { '>': '<', ']': '[', '}': '{', ')': '(' };
+        const openBracket = bracketPairs[bracket];
+        const beforeMatch = string.substring(0, offset);
+        
+        const escapedOpenIndex = beforeMatch.lastIndexOf(`\\${openBracket}`);
+        if (escapedOpenIndex !== -1) {
+          const contentBetween = beforeMatch.substring(escapedOpenIndex + 2);
+          // Make sure there's no unescaped closing bracket in between
+          const hasUnescapedClosing = contentBetween.includes(bracket) && !contentBetween.includes(`\\${bracket}`);
+          if (!hasUnescapedClosing) {
+            return match; // Keep original without space if part of escaped pair
+          }
+        }
+      }
+      
+      return `${bracket} ${cjk}`;
+    });
     newText = newText.replace(FIX_LEFT_BRACKET_ANY_RIGHT_BRACKET, '$1$2$3');
     newText = newText.replace(
       ANS_CJK_LEFT_BRACKET_ANY_RIGHT_BRACKET,
@@ -199,7 +249,21 @@ class Pangu {
     newText = newText.replace(AN_LEFT_BRACKET, '$1 $2');
     newText = newText.replace(RIGHT_BRACKET_AN, '$1 $2');
 
-    newText = newText.replace(CJK_ANS, '$1 $2');
+    newText = newText.replace(CJK_ANS, (match, cjk, ans, offset, string) => {
+      // Special handling for backslash to prevent breaking escape sequences
+      if (ans === '\\') {
+        // Check what comes after the backslash
+        const nextCharIndex = offset + match.length;
+        if (nextCharIndex < string.length) {
+          const nextChar = string[nextCharIndex];
+          // If backslash is followed by characters commonly escaped, don't add space
+          if (/[<>\[\]{}()_~*`"']/.test(nextChar)) {
+            return match; // Keep original without space
+          }
+        }
+      }
+      return `${cjk} ${ans}`;
+    });
     newText = newText.replace(ANS_CJK, '$1 $2');
 
     // 完全看不懂這行在幹嘛
