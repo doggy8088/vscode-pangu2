@@ -8,6 +8,8 @@ import remarkAzureDevOpsWiki from './remark-azure-devops-wiki.js';
 
 const DIRECTIVE_PLACEHOLDER_PREFIX = '。。PANGU。DIRECTIVE。BLOCK。。';
 const DIRECTIVE_PLACEHOLDER_SUFFIX = '。。END。。';
+const HTML_ENTITY_PLACEHOLDER_PREFIX = '。。PANGU。HTML。ENTITY。。';
+const HTML_ENTITY_PLACEHOLDER_SUFFIX = '。。END。。';
 
 export interface MarkdownLogger {
   appendLine(message: string): void;
@@ -33,6 +35,7 @@ export interface MarkdownFormatMetadata {
   colonFixes: number;
   tocReplacements: number;
   whitespaceRestored: number;
+  htmlEntitiesPreserved: number;
 }
 
 export interface MarkdownFormatResult {
@@ -75,6 +78,10 @@ export function formatMarkdownContent(
     .processSync(workingText)
     .toString();
   logger.appendLine('  ✅ Remark processing completed');
+
+  if (preprocessing.htmlEntities.length > 0) {
+    parsed = restoreHtmlEntities(parsed, preprocessing.htmlEntities, logger);
+  }
 
   if (options.protectDirectives && directiveBlocks.length > 0) {
     parsed = restoreDirectiveBlocks(parsed, directiveBlocks, logger);
@@ -120,6 +127,7 @@ export function formatMarkdownContent(
       colonFixes: preprocessing.colonFixes,
       tocReplacements: tocResult.replacements,
       whitespaceRestored,
+      htmlEntitiesPreserved: preprocessing.htmlEntities.length,
     },
   };
 }
@@ -176,13 +184,22 @@ interface PreprocessResult {
   bracketReplacements: number;
   boldSpacingFixes: number;
   colonFixes: number;
+  htmlEntities: string[];
+}
+
+interface HtmlEntityProtectionResult {
+  text: string;
+  entities: string[];
 }
 
 function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessResult {
   logger.appendLine('  🔧 Pre-processing LLM output issues...');
 
+  const entityProtection = protectHtmlEntities(text, logger);
+  let workingText = entityProtection.text;
+
   let bracketReplacements = 0;
-  const bracketLines = text.split('\n').map((line, index) => {
+  const bracketLines = workingText.split('\n').map((line, index) => {
     const replaced = line.replace(/（([^）]+)）/g, (_match, content) => {
       bracketReplacements++;
       return '(' + content + ')';
@@ -228,7 +245,50 @@ function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessRes
     bracketReplacements,
     boldSpacingFixes: boldSpacing.count,
     colonFixes: boldColon.count,
+    htmlEntities: entityProtection.entities,
   };
+}
+
+function protectHtmlEntities(text: string, logger: MarkdownLogger): HtmlEntityProtectionResult {
+  logger.appendLine('  🛡️ Protecting HTML entities before remark processing...');
+
+  const htmlEntityRegex = /&(#[0-9]+;|#[xX][0-9a-fA-F]+;|[a-zA-Z][a-zA-Z0-9:-]*;)/g;
+  const entities: string[] = [];
+
+  const replaced = text.replace(htmlEntityRegex, (match) => {
+    const entityIndex = entities.length;
+    entities.push(match);
+    return `${HTML_ENTITY_PLACEHOLDER_PREFIX}${entityIndex}${HTML_ENTITY_PLACEHOLDER_SUFFIX}`;
+  });
+
+  if (entities.length > 0) {
+    logger.appendLine(`  ✅ Protected ${entities.length} HTML entities`);
+  } else {
+    logger.appendLine('  ➡️  No HTML entities found');
+  }
+
+  return { text: replaced, entities };
+}
+
+function restoreHtmlEntities(text: string, entities: string[], logger: MarkdownLogger): string {
+  logger.appendLine('  🧩 Restoring HTML entities...');
+
+  let restored = text;
+  let restoredCount = 0;
+
+  entities.forEach((entity, index) => {
+    const token = `${HTML_ENTITY_PLACEHOLDER_PREFIX}${index}${HTML_ENTITY_PLACEHOLDER_SUFFIX}`;
+    if (restored.includes(token)) {
+      restored = restored.split(token).join(entity);
+      logger.appendLine(`    🔁 Restored HTML entity ${index}`);
+      restoredCount++;
+    } else {
+      logger.appendLine(`    ⚠️  Placeholder not found for HTML entity ${index}`);
+    }
+  });
+
+  logger.appendLine(`  ✅ Restored ${restoredCount}/${entities.length} HTML entities`);
+  return restored;
 }
 
 interface RegexReplaceResult {
