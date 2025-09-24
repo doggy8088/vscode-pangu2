@@ -28,7 +28,6 @@ All notable changes to the **盤古之白** will be documented in this file.
 
 * 解決 `~` 符號被誤跳脫的問題（例如：...）
 
-
 ## 0.9.4 - 2025-06-12
 
 * 新增 `pangu2.enableLooseFormatting` 設定選項
