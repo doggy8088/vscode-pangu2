@@ -30,6 +30,13 @@ const DIRECTIVE_PLACEHOLDER_PREFIX = '。。PANGU。DIRECTIVE。BLOCK。。';
 const DIRECTIVE_PLACEHOLDER_SUFFIX = '。。END。。';
 const HTML_ENTITY_PLACEHOLDER_PREFIX = '。。PANGU。HTML。ENTITY。。';
 const HTML_ENTITY_PLACEHOLDER_SUFFIX = '。。END。。';
+const ESCAPED_SYMBOL_PLACEHOLDER_PREFIX = '。。PANGU。ESCAPED。SYMBOL。。';
+const ESCAPED_SYMBOL_PLACEHOLDER_SUFFIX = '。。END。。';
+// Add more characters to this regex character class when new escaped symbols need preservation.
+
+function escapeRegExp(str: string) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+const ESCAPED_SYMBOLS = `!"#$%&'()*+,-./:;<=>?@[\\]^_{|}~\``;
+const ESCAPED_SYMBOL_REGEX = new RegExp('\\\\[' + escapeRegExp(ESCAPED_SYMBOLS) + ']', 'g');
 
 export interface MarkdownLogger {
   appendLine(message: string): void;
@@ -56,6 +63,7 @@ export interface MarkdownFormatMetadata {
   tocReplacements: number;
   whitespaceRestored: number;
   htmlEntitiesPreserved: number;
+  escapedCharactersPreserved: number;
 }
 
 export interface MarkdownFormatResult {
@@ -152,6 +160,14 @@ export function formatMarkdownContent(
     logger.appendLine('  ⏭️  Loose formatting disabled');
   }
 
+  // 還原跳脫字元必須安排在 applyLooseFormatting 之後
+  // 因為 applyLooseFormatting 會移除某些不必要的跳脫反斜線
+  // 如果先還原跳脫字元，會導致 applyLooseFormatting 把原本的跳脫反斜線移除掉
+  // 造成不必要的跳脫字元被移除
+  if (preprocessing.escapedCharacters.length > 0) {
+    parsed = restoreEscapedCharacters(parsed, preprocessing.escapedCharacters, logger);
+  }
+
   let whitespaceRestored = 0;
   if (options.preserveWhitespace && options.originalText) {
     const eol = options.originalEol ?? inferEol(options.originalText);
@@ -177,6 +193,7 @@ export function formatMarkdownContent(
       tocReplacements: tocResult.replacements,
       whitespaceRestored,
       htmlEntitiesPreserved: preprocessing.htmlEntities.length,
+      escapedCharactersPreserved: preprocessing.escapedCharacters.length,
     },
   };
 }
@@ -234,6 +251,7 @@ interface PreprocessResult {
   boldSpacingFixes: number;
   colonFixes: number;
   htmlEntities: string[];
+  escapedCharacters: string[];
 }
 
 interface HtmlEntityProtectionResult {
@@ -241,11 +259,24 @@ interface HtmlEntityProtectionResult {
   entities: string[];
 }
 
+interface EscapedCharacterProtectionResult {
+  text: string;
+  sequences: string[];
+}
+
 function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessResult {
   logger.appendLine('  🔧 Pre-processing LLM output issues...');
 
   const entityProtection = protectHtmlEntities(text, logger);
   let workingText = entityProtection.text;
+
+  // 保護跳脫字元必須在 HTML 實體保護之後
+  // 因為 HTML 實體可能包含跳脫字元
+  // 例如 &lt;div class=\&quot;example\&quot;&gt;
+  // 如果先保護跳脫字元，會導致 HTML 實體無法正確被保護
+  // 因為跳脫字元會被替換成佔位符，破壞 HTML 實體的結構
+  const escapedProtection = protectEscapedCharacters(workingText, logger);
+  workingText = escapedProtection.text;
 
   let bracketReplacements = 0;
   const bracketLines = workingText.split('\n').map((line, index) => {
@@ -295,7 +326,27 @@ function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessRes
     boldSpacingFixes: boldSpacing.count,
     colonFixes: boldColon.count,
     htmlEntities: entityProtection.entities,
+    escapedCharacters: escapedProtection.sequences,
   };
+}
+
+function protectEscapedCharacters(text: string, logger: MarkdownLogger): EscapedCharacterProtectionResult {
+  logger.appendLine('  🛡️ Protecting escaped characters before remark processing...');
+
+  const sequences: string[] = [];
+  const replaced = text.replace(ESCAPED_SYMBOL_REGEX, (match) => {
+    const sequenceIndex = sequences.length;
+    sequences.push(match);
+    return `${ESCAPED_SYMBOL_PLACEHOLDER_PREFIX}${sequenceIndex}${ESCAPED_SYMBOL_PLACEHOLDER_SUFFIX}`;
+  });
+
+  if (sequences.length > 0) {
+    logger.appendLine(`  ✅ Protected ${sequences.length} escaped characters`);
+  } else {
+    logger.appendLine('  ➡️  No escaped characters found');
+  }
+
+  return { text: replaced, sequences };
 }
 
 function protectHtmlEntities(text: string, logger: MarkdownLogger): HtmlEntityProtectionResult {
@@ -337,6 +388,27 @@ function restoreHtmlEntities(text: string, entities: string[], logger: MarkdownL
   });
 
   logger.appendLine(`  ✅ Restored ${restoredCount}/${entities.length} HTML entities`);
+  return restored;
+}
+
+function restoreEscapedCharacters(text: string, sequences: string[], logger: MarkdownLogger): string {
+  logger.appendLine('  🧩 Restoring escaped characters...');
+
+  let restored = text;
+  let restoredCount = 0;
+
+  sequences.forEach((sequence, index) => {
+    const token = `${ESCAPED_SYMBOL_PLACEHOLDER_PREFIX}${index}${ESCAPED_SYMBOL_PLACEHOLDER_SUFFIX}`;
+    if (restored.includes(token)) {
+      restored = restored.split(token).join(sequence);
+      logger.appendLine(`    🔁 Restored escaped character ${index}`);
+      restoredCount++;
+    } else {
+      logger.appendLine(`    ⚠️  Placeholder not found for escaped character ${index}`);
+    }
+  });
+
+  logger.appendLine(`  ✅ Restored ${restoredCount}/${sequences.length} escaped characters`);
   return restored;
 }
 
@@ -395,6 +467,28 @@ function fixSpecialSyntax(text: string, logger: MarkdownLogger): TocFixResult {
   return { text: result, replacements };
 }
 
+/**
+ * 對 Markdown 文字套用鬆散格式化，選擇性地取消某些跳脫字元的跳脫。
+ *
+ * 此函式處理 Markdown 文字中的跳脫底線、方括號和波浪號，
+ * 在特定條件下移除跳脫反斜線以提升可讀性，同時保留必要的跳脫處理。
+ *
+ * @param text - 包含可能跳脫字元的 Markdown 文字
+ * @returns 套用選擇性取消跳脫後的處理文字
+ *
+ * @remarks
+ * 此函式處理三種類型的跳脫字元：
+ * - 跳脫底線（`\_`）：當被非英數字元或空白字元包圍時取消跳脫
+ * - 跳脫方括號（`\[`）：除非它們看起來是 Markdown 連結的一部分或在標題中，否則取消跳脫
+ * - 跳脫波浪號（`\~`）：除非它們看起來是刪除線語法（`~~`）的一部分，否則取消跳脫
+ *
+ * @example
+ * ```typescript
+ * const input = "This is a \\_test\\_ with \\[brackets\\] and \\~tildes\\~";
+ * const output = applyLooseFormatting(input);
+ * // 結果取決於周圍的上下文和 Markdown 語法偵測
+ * ```
+ */
 function applyLooseFormatting(text: string): string {
   let result = text;
 
