@@ -2,6 +2,10 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.3.0 - 2025-09-25
+
+* 修正：结尾的空行格式化有誤 #28
+
 ## 1.2.0 - 2025-09-24
 
 * 修正：在格式化期間保留已轉義的 Markdown 符號

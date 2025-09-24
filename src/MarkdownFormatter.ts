@@ -558,6 +558,30 @@ interface WhitespaceRestoreResult {
   restored: number;
 }
 
+/**
+ * 還原在 Markdown 解析過程中可能被移除的純空白行。
+ *
+ * 此函式比較原始文字與解析後的文字，並還原在原始文字中僅包含空白字元（空格和 Tab）
+ * 但在解析過程中被轉換為空行的行。這有助於保留 Markdown 文件的原始格式和結構。
+ *
+ * @param originalText - 解析前的原始 Markdown 文字
+ * @param parsedText - Markdown 解析後可能丟失純空白行的文字
+ * @param eol - 要使用的行尾字元序列（'\n' 或 '\r\n'）
+ * @param logger - 用於追蹤還原過程的記錄器實例
+ * @returns 包含還原後文字和被還原行數的物件
+ *
+ * @example
+ * ```typescript
+ * const result = restoreWhitespaceOnlyLines(
+ *   "Line 1\n   \nLine 3",  // 原始文字，中間行為純空白行
+ *   "Line 1\n\nLine 3",     // 解析後，中間行變為空行
+ *   '\n',
+ *   logger
+ * );
+ * // result.text: "Line 1\n   \nLine 3"
+ * // result.restored: 1
+ * ```
+ */
 function restoreWhitespaceOnlyLines(
   originalText: string,
   parsedText: string,
@@ -571,22 +595,31 @@ function restoreWhitespaceOnlyLines(
     const origLines = originalText.split(/\r?\n/);
     const newLines = parsedText.split(/\r?\n/);
 
-    logger.appendLine(`  📐 Original lines: ${origLines.length}, New lines: ${newLines.length}`);
+    // 修正檔尾換行處理：如果文字檔尾有換行，split 會產生空字串，需要移除以正確計算行數
+    const origLinesActual = parsedHasFinalNl && origLines[origLines.length - 1] === ''
+      ? origLines.slice(0, -1)
+      : origLines;
+    const newLinesActual = parsedHasFinalNl && newLines[newLines.length - 1] === ''
+      ? newLines.slice(0, -1)
+      : newLines;
 
-    if (origLines.length !== newLines.length) {
+    logger.appendLine(`  📐 Original lines: ${origLinesActual.length}, New lines: ${newLinesActual.length}`);
+
+    if (origLinesActual.length !== newLinesActual.length) {
       logger.appendLine('  ⚠️  Line count mismatch - skipping whitespace preservation');
       return { text: parsedText, restored: 0 };
     }
 
     let restoredCount = 0;
-    for (let i = 0; i < origLines.length; i++) {
-      if (/^[\t ]+$/.test(origLines[i]) && newLines[i] === '') {
-        newLines[i] = origLines[i];
+    for (let i = 0; i < origLinesActual.length; i++) {
+      if (/^[\t ]+$/.test(origLinesActual[i]) && newLinesActual[i] === '') {
+        newLinesActual[i] = origLinesActual[i];
         restoredCount++;
       }
     }
 
-    const joined = newLines.join(eol) + (parsedHasFinalNl ? eol : '');
+    // 修正重建邏輯：直接用 join 重建，然後根據原始檔尾換行狀態決定是否加上換行
+    const joined = newLinesActual.join(eol) + (parsedHasFinalNl ? eol : '');
 
     if (restoredCount > 0) {
       logger.appendLine(`  ✅ Restored ${restoredCount} whitespace-only lines`);
