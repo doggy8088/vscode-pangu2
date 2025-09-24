@@ -13,7 +13,6 @@
   "engines": {
     "vscode": "^1.95.0"
   },
-
   "license": "MIT",
   "galleryBanner": {
     "color": "#EBF0F7",
@@ -53,14 +52,14 @@
         "inputSchema": {
           "type": "object",
           "properties": {
-        "text": {
-          "type": "string",
-          "description": "The text content to be formatted with Pangu spacing rules. Can be plain text or Markdown."
-        },
-        "file": {
-          "type": "string",
-          "description": "Absolute path to a file that should be formatted in place using Pangu spacing rules."
-        }
+            "text": {
+              "type": "string",
+              "description": "The text content to be formatted with Pangu spacing rules. Can be plain text or Markdown."
+            },
+            "file": {
+              "type": "string",
+              "description": "Absolute path to a file that should be formatted in place using Pangu spacing rules."
+            }
           },
           "required": []
         }
@@ -132,9 +131,16 @@
     "vscode-test": "^1.2.2"
   },
   "dependencies": {
+    "mdast-util-gfm-footnote": "^2.1.0",
+    "mdast-util-gfm-strikethrough": "^2.0.0",
+    "mdast-util-gfm-table": "^2.0.0",
+    "mdast-util-gfm-task-list-item": "^2.0.0",
+    "micromark-extension-gfm-footnote": "^2.1.0",
+    "micromark-extension-gfm-strikethrough": "^2.1.0",
+    "micromark-extension-gfm-table": "^2.1.1",
+    "micromark-extension-gfm-task-list-item": "^2.1.0",
     "remark": "^15.0.1",
     "remark-frontmatter": "^5.0.0",
-    "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "remark-stringify": "^11.0.0",
     "unified": "^11.0.3",

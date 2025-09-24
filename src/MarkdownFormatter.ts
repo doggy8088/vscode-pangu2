@@ -1,10 +1,30 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
-import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkPangu from './remark-pangu.js';
 import remarkAzureDevOpsWiki from './remark-azure-devops-wiki.js';
+
+import { gfmTable } from 'micromark-extension-gfm-table';
+import { gfmTableFromMarkdown, gfmTableToMarkdown } from 'mdast-util-gfm-table';
+
+import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
+import {
+  gfmTaskListItemFromMarkdown,
+  gfmTaskListItemToMarkdown,
+} from 'mdast-util-gfm-task-list-item';
+
+import { gfmStrikethrough } from 'micromark-extension-gfm-strikethrough';
+import {
+  gfmStrikethroughFromMarkdown,
+  gfmStrikethroughToMarkdown,
+} from 'mdast-util-gfm-strikethrough';
+
+import { gfmFootnote } from 'micromark-extension-gfm-footnote';
+import {
+  gfmFootnoteFromMarkdown,
+  gfmFootnoteToMarkdown,
+} from 'mdast-util-gfm-footnote';
 
 const DIRECTIVE_PLACEHOLDER_PREFIX = '。。PANGU。DIRECTIVE。BLOCK。。';
 const DIRECTIVE_PLACEHOLDER_SUFFIX = '。。END。。';
@@ -66,7 +86,36 @@ export function formatMarkdownContent(
   logger.appendLine('  🚀 Starting remark processing pipeline...');
   let parsed = unified()
     .use(remarkParse)
-    .use(remarkGfm)
+
+    // add support for GFM (GitHub flavored markdown)
+    // (autolink literals, footnotes, strikethrough, tables, tasklists)
+    // https://github.com/remarkjs/remark-gfm
+    // 這個 remark-gfm plugin 不能單獨關閉特定功能 (AutoLink)，所以要分別安裝個別的套件
+    // .use(remarkGfm)
+
+    // Add micromark (tokenizer) extensions
+    .data('micromarkExtensions', [
+      gfmTable(),
+      gfmTaskListItem(),
+      gfmStrikethrough(),
+      gfmFootnote(),
+      // NOTICE: no autolink literal extension here
+    ])
+    // Add mdast (AST mapping) extensions
+    .data('fromMarkdownExtensions', [
+      gfmTableFromMarkdown(),
+      gfmTaskListItemFromMarkdown(),
+      gfmStrikethroughFromMarkdown(),
+      gfmFootnoteFromMarkdown(),
+    ])
+    // (Optional) if you later serialize back to Markdown:
+    .data('toMarkdownExtensions', [
+      gfmTableToMarkdown(),
+      gfmTaskListItemToMarkdown(),
+      gfmStrikethroughToMarkdown(),
+      gfmFootnoteToMarkdown(),
+    ])
+
     .use(remarkFrontmatter, ['yaml', 'toml'])
     .use(remarkAzureDevOpsWiki(logger))
     .use(remarkPangu(logger))
