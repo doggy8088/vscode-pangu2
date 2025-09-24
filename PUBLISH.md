@@ -21,7 +21,7 @@
 
     ```sh
     git add package.json
-    git commit -m "Bump version to 1.1.0"
+    git commit -m "Bump version to 1.2.0"
     git push origin main
     ```
 

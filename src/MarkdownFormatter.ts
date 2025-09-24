@@ -1,13 +1,42 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
-import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkPangu from './remark-pangu.js';
 import remarkAzureDevOpsWiki from './remark-azure-devops-wiki.js';
 
+import { gfmTable } from 'micromark-extension-gfm-table';
+import { gfmTableFromMarkdown, gfmTableToMarkdown } from 'mdast-util-gfm-table';
+
+import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
+import {
+  gfmTaskListItemFromMarkdown,
+  gfmTaskListItemToMarkdown,
+} from 'mdast-util-gfm-task-list-item';
+
+import { gfmStrikethrough } from 'micromark-extension-gfm-strikethrough';
+import {
+  gfmStrikethroughFromMarkdown,
+  gfmStrikethroughToMarkdown,
+} from 'mdast-util-gfm-strikethrough';
+
+import { gfmFootnote } from 'micromark-extension-gfm-footnote';
+import {
+  gfmFootnoteFromMarkdown,
+  gfmFootnoteToMarkdown,
+} from 'mdast-util-gfm-footnote';
+
 const DIRECTIVE_PLACEHOLDER_PREFIX = '。。PANGU。DIRECTIVE。BLOCK。。';
 const DIRECTIVE_PLACEHOLDER_SUFFIX = '。。END。。';
+const HTML_ENTITY_PLACEHOLDER_PREFIX = '。。PANGU。HTML。ENTITY。。';
+const HTML_ENTITY_PLACEHOLDER_SUFFIX = '。。END。。';
+const ESCAPED_SYMBOL_PLACEHOLDER_PREFIX = '。。PANGU。ESCAPED。SYMBOL。。';
+const ESCAPED_SYMBOL_PLACEHOLDER_SUFFIX = '。。END。。';
+// Add more characters to this regex character class when new escaped symbols need preservation.
+
+function escapeRegExp(str: string) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+const ESCAPED_SYMBOLS = `!"#$%&'()*+,-./:;<=>?@[\\]^_{|}~\``;
+const ESCAPED_SYMBOL_REGEX = new RegExp('\\\\[' + escapeRegExp(ESCAPED_SYMBOLS) + ']', 'g');
 
 export interface MarkdownLogger {
   appendLine(message: string): void;
@@ -33,6 +62,8 @@ export interface MarkdownFormatMetadata {
   colonFixes: number;
   tocReplacements: number;
   whitespaceRestored: number;
+  htmlEntitiesPreserved: number;
+  escapedCharactersPreserved: number;
 }
 
 export interface MarkdownFormatResult {
@@ -63,7 +94,36 @@ export function formatMarkdownContent(
   logger.appendLine('  🚀 Starting remark processing pipeline...');
   let parsed = unified()
     .use(remarkParse)
-    .use(remarkGfm)
+
+    // add support for GFM (GitHub flavored markdown)
+    // (autolink literals, footnotes, strikethrough, tables, tasklists)
+    // https://github.com/remarkjs/remark-gfm
+    // 這個 remark-gfm plugin 不能單獨關閉特定功能 (AutoLink)，所以要分別安裝個別的套件
+    // .use(remarkGfm)
+
+    // Add micromark (tokenizer) extensions
+    .data('micromarkExtensions', [
+      gfmTable(),
+      gfmTaskListItem(),
+      gfmStrikethrough(),
+      gfmFootnote(),
+      // NOTICE: no autolink literal extension here
+    ])
+    // Add mdast (AST mapping) extensions
+    .data('fromMarkdownExtensions', [
+      gfmTableFromMarkdown(),
+      gfmTaskListItemFromMarkdown(),
+      gfmStrikethroughFromMarkdown(),
+      gfmFootnoteFromMarkdown(),
+    ])
+    // (Optional) if you later serialize back to Markdown:
+    .data('toMarkdownExtensions', [
+      gfmTableToMarkdown(),
+      gfmTaskListItemToMarkdown(),
+      gfmStrikethroughToMarkdown(),
+      gfmFootnoteToMarkdown(),
+    ])
+
     .use(remarkFrontmatter, ['yaml', 'toml'])
     .use(remarkAzureDevOpsWiki(logger))
     .use(remarkPangu(logger))
@@ -75,6 +135,10 @@ export function formatMarkdownContent(
     .processSync(workingText)
     .toString();
   logger.appendLine('  ✅ Remark processing completed');
+
+  if (preprocessing.htmlEntities.length > 0) {
+    parsed = restoreHtmlEntities(parsed, preprocessing.htmlEntities, logger);
+  }
 
   if (options.protectDirectives && directiveBlocks.length > 0) {
     parsed = restoreDirectiveBlocks(parsed, directiveBlocks, logger);
@@ -94,6 +158,14 @@ export function formatMarkdownContent(
     }
   } else {
     logger.appendLine('  ⏭️  Loose formatting disabled');
+  }
+
+  // 還原跳脫字元必須安排在 applyLooseFormatting 之後
+  // 因為 applyLooseFormatting 會移除某些不必要的跳脫反斜線
+  // 如果先還原跳脫字元，會導致 applyLooseFormatting 把原本的跳脫反斜線移除掉
+  // 造成不必要的跳脫字元被移除
+  if (preprocessing.escapedCharacters.length > 0) {
+    parsed = restoreEscapedCharacters(parsed, preprocessing.escapedCharacters, logger);
   }
 
   let whitespaceRestored = 0;
@@ -120,6 +192,8 @@ export function formatMarkdownContent(
       colonFixes: preprocessing.colonFixes,
       tocReplacements: tocResult.replacements,
       whitespaceRestored,
+      htmlEntitiesPreserved: preprocessing.htmlEntities.length,
+      escapedCharactersPreserved: preprocessing.escapedCharacters.length,
     },
   };
 }
@@ -176,13 +250,36 @@ interface PreprocessResult {
   bracketReplacements: number;
   boldSpacingFixes: number;
   colonFixes: number;
+  htmlEntities: string[];
+  escapedCharacters: string[];
+}
+
+interface HtmlEntityProtectionResult {
+  text: string;
+  entities: string[];
+}
+
+interface EscapedCharacterProtectionResult {
+  text: string;
+  sequences: string[];
 }
 
 function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessResult {
   logger.appendLine('  🔧 Pre-processing LLM output issues...');
 
+  const entityProtection = protectHtmlEntities(text, logger);
+  let workingText = entityProtection.text;
+
+  // 保護跳脫字元必須在 HTML 實體保護之後
+  // 因為 HTML 實體可能包含跳脫字元
+  // 例如 &lt;div class=\&quot;example\&quot;&gt;
+  // 如果先保護跳脫字元，會導致 HTML 實體無法正確被保護
+  // 因為跳脫字元會被替換成佔位符，破壞 HTML 實體的結構
+  const escapedProtection = protectEscapedCharacters(workingText, logger);
+  workingText = escapedProtection.text;
+
   let bracketReplacements = 0;
-  const bracketLines = text.split('\n').map((line, index) => {
+  const bracketLines = workingText.split('\n').map((line, index) => {
     const replaced = line.replace(/（([^）]+)）/g, (_match, content) => {
       bracketReplacements++;
       return '(' + content + ')';
@@ -228,7 +325,91 @@ function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessRes
     bracketReplacements,
     boldSpacingFixes: boldSpacing.count,
     colonFixes: boldColon.count,
+    htmlEntities: entityProtection.entities,
+    escapedCharacters: escapedProtection.sequences,
   };
+}
+
+function protectEscapedCharacters(text: string, logger: MarkdownLogger): EscapedCharacterProtectionResult {
+  logger.appendLine('  🛡️ Protecting escaped characters before remark processing...');
+
+  const sequences: string[] = [];
+  const replaced = text.replace(ESCAPED_SYMBOL_REGEX, (match) => {
+    const sequenceIndex = sequences.length;
+    sequences.push(match);
+    return `${ESCAPED_SYMBOL_PLACEHOLDER_PREFIX}${sequenceIndex}${ESCAPED_SYMBOL_PLACEHOLDER_SUFFIX}`;
+  });
+
+  if (sequences.length > 0) {
+    logger.appendLine(`  ✅ Protected ${sequences.length} escaped characters`);
+  } else {
+    logger.appendLine('  ➡️  No escaped characters found');
+  }
+
+  return { text: replaced, sequences };
+}
+
+function protectHtmlEntities(text: string, logger: MarkdownLogger): HtmlEntityProtectionResult {
+  logger.appendLine('  🛡️ Protecting HTML entities before remark processing...');
+
+  const htmlEntityRegex = /&(#[0-9]+;|#[xX][0-9a-fA-F]+;|[a-zA-Z][a-zA-Z0-9:-]*;)/g;
+  const entities: string[] = [];
+
+  const replaced = text.replace(htmlEntityRegex, (match) => {
+    const entityIndex = entities.length;
+    entities.push(match);
+    return `${HTML_ENTITY_PLACEHOLDER_PREFIX}${entityIndex}${HTML_ENTITY_PLACEHOLDER_SUFFIX}`;
+  });
+
+  if (entities.length > 0) {
+    logger.appendLine(`  ✅ Protected ${entities.length} HTML entities`);
+  } else {
+    logger.appendLine('  ➡️  No HTML entities found');
+  }
+
+  return { text: replaced, entities };
+}
+
+function restoreHtmlEntities(text: string, entities: string[], logger: MarkdownLogger): string {
+  logger.appendLine('  🧩 Restoring HTML entities...');
+
+  let restored = text;
+  let restoredCount = 0;
+
+  entities.forEach((entity, index) => {
+    const token = `${HTML_ENTITY_PLACEHOLDER_PREFIX}${index}${HTML_ENTITY_PLACEHOLDER_SUFFIX}`;
+    if (restored.includes(token)) {
+      restored = restored.split(token).join(entity);
+      logger.appendLine(`    🔁 Restored HTML entity ${index}`);
+      restoredCount++;
+    } else {
+      logger.appendLine(`    ⚠️  Placeholder not found for HTML entity ${index}`);
+    }
+  });
+
+  logger.appendLine(`  ✅ Restored ${restoredCount}/${entities.length} HTML entities`);
+  return restored;
+}
+
+function restoreEscapedCharacters(text: string, sequences: string[], logger: MarkdownLogger): string {
+  logger.appendLine('  🧩 Restoring escaped characters...');
+
+  let restored = text;
+  let restoredCount = 0;
+
+  sequences.forEach((sequence, index) => {
+    const token = `${ESCAPED_SYMBOL_PLACEHOLDER_PREFIX}${index}${ESCAPED_SYMBOL_PLACEHOLDER_SUFFIX}`;
+    if (restored.includes(token)) {
+      restored = restored.split(token).join(sequence);
+      logger.appendLine(`    🔁 Restored escaped character ${index}`);
+      restoredCount++;
+    } else {
+      logger.appendLine(`    ⚠️  Placeholder not found for escaped character ${index}`);
+    }
+  });
+
+  logger.appendLine(`  ✅ Restored ${restoredCount}/${sequences.length} escaped characters`);
+  return restored;
 }
 
 interface RegexReplaceResult {
@@ -286,6 +467,28 @@ function fixSpecialSyntax(text: string, logger: MarkdownLogger): TocFixResult {
   return { text: result, replacements };
 }
 
+/**
+ * 對 Markdown 文字套用鬆散格式化，選擇性地取消某些跳脫字元的跳脫。
+ *
+ * 此函式處理 Markdown 文字中的跳脫底線、方括號和波浪號，
+ * 在特定條件下移除跳脫反斜線以提升可讀性，同時保留必要的跳脫處理。
+ *
+ * @param text - 包含可能跳脫字元的 Markdown 文字
+ * @returns 套用選擇性取消跳脫後的處理文字
+ *
+ * @remarks
+ * 此函式處理三種類型的跳脫字元：
+ * - 跳脫底線（`\_`）：當被非英數字元或空白字元包圍時取消跳脫
+ * - 跳脫方括號（`\[`）：除非它們看起來是 Markdown 連結的一部分或在標題中，否則取消跳脫
+ * - 跳脫波浪號（`\~`）：除非它們看起來是刪除線語法（`~~`）的一部分，否則取消跳脫
+ *
+ * @example
+ * ```typescript
+ * const input = "This is a \\_test\\_ with \\[brackets\\] and \\~tildes\\~";
+ * const output = applyLooseFormatting(input);
+ * // 結果取決於周圍的上下文和 Markdown 語法偵測
+ * ```
+ */
 function applyLooseFormatting(text: string): string {
   let result = text;
 

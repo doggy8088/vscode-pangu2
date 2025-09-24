@@ -2,6 +2,13 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.2.0 - 2025-09-24
+
+* 修正：在格式化期間保留已轉義的 Markdown 符號
+  * 在 remark 流程之前，為已轉義字符添加基於佔位符的保護
+  * 在鬆散格式化後恢復受保護的轉義，以避免丟失原來的反斜線
+  * 在 MarkdownFormatMetadata 中報告保留的轉義數量以供診斷
+
 ## 1.1.0 - 2025-09-24
 
 * 新增 GitHub Copilot Chat 整合功能 🎉
