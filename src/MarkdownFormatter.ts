@@ -308,8 +308,8 @@ function preprocessMarkdown(text: string, logger: MarkdownLogger): PreprocessRes
 
   const boldColon = applyRegexWithCount(
     boldSpacing.text,
-    /([:：])(\*\*)([^\p{P}])/gu,
-    '$2$1$3'
+    /(\*\*[^\*\n]*?)([:：])(\*\*)([^\p{P}])/gu,
+    "$1$3$2$4"
   );
 
   if (boldColon.count > 0) {

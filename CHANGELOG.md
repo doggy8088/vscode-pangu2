@@ -2,6 +2,10 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.3.1 - 2025-09-29
+
+* 修正一個 `TEXT：**` 的 RegEx 錯誤
+
 ## 1.3.0 - 2025-09-25
 
 * 修正：结尾的空行格式化有誤 #28

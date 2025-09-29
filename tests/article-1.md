@@ -1,4 +1,4 @@
-# 介紹好用工具：使用 LinkChecker 檢查網站連結有效性
+# 介紹好用工具：**使用 LinkChecker 檢查網站連結有效性**
 
 我們在幫客戶建置的網站在上線前會做非常多品質檢查的工作，其中一項就是檢查網站連結的有效性，我個人都是使用[LinkChecker](https://github.com/linkchecker/linkchecker)來完成這個任務，它可以檢查網站上所有的連結是否有效，並且可以產生各種不同格式的報告，讓我們可以快速的找出網站上的連結問題。今天這篇文章我就來介紹這個好用工具！
 
@@ -8,7 +8,7 @@
 
 ### 安裝LinkChecker工具
 
-只要你有安裝Python 3，那麼你就可以透過`pip`命令來安裝LinkChecker工具：
+1. **測試：**只要你有安裝Python 3，那麼你就可以透過`pip`命令來安裝LinkChecker工具：
 
 ```sh
 pip3 install linkchecker
