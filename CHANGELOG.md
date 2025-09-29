@@ -2,6 +2,10 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.3.2 - 2025-09-29
+
+* 將 `activationEvents` 從 `*` 改為 `onEditSession:file`，以提升效能
+
 ## 1.3.1 - 2025-09-29
 
 * 修正一個 `TEXT：**` 的 RegEx 錯誤
