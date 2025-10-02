@@ -2,7 +2,7 @@
   "name": "pangu2",
   "displayName": "盤古之白",
   "description": "這個擴充套件會自動替你在文件中所有的中文字和半形的英文、數字、符號之間插入空白。",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "preview": false,
   "publisher": "doggy8088",
   "icon": "icon.png",

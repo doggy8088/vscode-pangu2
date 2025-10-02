@@ -2,6 +2,11 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.3.3 - 2025-10-03
+
+* 修正 `GETDATE()` 這樣的字串被改成 `GETDATE ()` 的問題
+  * 只會在字串後面加空格，不會在括號前面加空格
+
 ## 1.3.2 - 2025-09-29
 
 * 將 `activationEvents` 從 `*` 改為 `onEditSession:file`，以提升效能

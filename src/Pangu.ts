@@ -77,7 +77,9 @@ const LEFT_BRACKET_ANY_RIGHT_BRACKET_ANS_CJK = new RegExp(
   `([\u201c])([A-Za-z0-9${CJK}\\-_ ]+)([\u201d])[ ]*([A-Za-z0-9${CJK}])`,
   'g'
 );
+// 修改：左括號前面是英文/數字時加空格，但排除右括號緊接左括號的情況（如函數調用的空括號）
 const AN_LEFT_BRACKET = /([A-Za-z0-9])([\(\[\{])/g;
+// 修改：右括號後面是英文/數字時加空格，但排除右括號緊接左括號的情況（如函數調用的空括號）
 const RIGHT_BRACKET_AN = /([\)\]\}])([A-Za-z0-9])/g;
 const CJK_ANS = new RegExp(
   `([${CJK}])([A-Za-z\u0370-\u03ff0-9@\\$%\\^&\\*\\-\\+\\\\=\\|/\u00a1-\u00ff\u2150-\u218f\u2700—\u27bf])`,
@@ -196,8 +198,10 @@ class Pangu {
       '$1$2$3 $4'
     );
 
-    newText = newText.replace(AN_LEFT_BRACKET, '$1 $2');
-    newText = newText.replace(RIGHT_BRACKET_AN, '$1 $2');
+    // 先處理英數字與括號的間距，但要避免破壞空括號
+    // 使用負向前瞻來排除空括號的情況
+    newText = newText.replace(/([A-Za-z0-9])([\(\[\{])(?![\)\]\}])/g, '$1 $2');
+    newText = newText.replace(/(?<![\(\[\{])([\)\]\}])([A-Za-z0-9])/g, '$1 $2');
 
     newText = newText.replace(CJK_ANS, '$1 $2');
     newText = newText.replace(ANS_CJK, '$1 $2');
