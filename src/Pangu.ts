@@ -97,7 +97,6 @@ const URL = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1
 
 // LaTeX command pattern: matches \command{...}, \command[...]{...}, ~\command{...}, etc.
 // This pattern captures common LaTeX commands with their arguments to protect them from spacing
-// It also captures the character immediately before and after to prevent spacing issues
 const LATEX_COMMAND = /\\[a-zA-Z]+(?:\*)?(?:\[[^\]]*\])*(?:\{[^}]*\})*/g;
 
 class Pangu {
