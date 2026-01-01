@@ -82,6 +82,15 @@ function addSpace(
           break;
         }
 
+        case 'latex':
+        case 'tex': {
+          logger.appendLine('  📐 LaTeX processing mode');
+          parsed = pangu.spacing(txt, { latexMode: true });
+          logger.appendLine('  ✅ Pangu spacing applied with LaTeX protection');
+          logger.appendLine(`  📊 Result: ${parsed.length} chars, ${parsed.split('\n').length} lines`);
+          break;
+        }
+
         default:
           logger.appendLine('  📝 Plain text processing mode');
           parsed = pangu.spacing(txt);

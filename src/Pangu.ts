@@ -95,10 +95,17 @@ const MIDDLE_DOT = /([ ]*)([\u00b7\u2022\u2027])([ ]*)/g;
 // Pattern source: https://uibakery.io/regex-library/url
 const URL = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=\u2e80-\u2eff\u2f00-\u2fdf\u3040-\u309f\u30a0-\u30fa\u30fc-\u30ff\u3100-\u312f\u3200-\u32ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]*)/ig;
 
+// LaTeX command pattern: matches \command{...}, \command[...]{...}, ~\command{...}, etc.
+// This pattern captures common LaTeX commands with their arguments to protect them from spacing
+// It also captures the character immediately before and after to prevent spacing issues
+const LATEX_COMMAND = /\\[a-zA-Z]+(?:\*)?(?:\[[^\]]*\])*(?:\{[^}]*\})*/g;
+
 class Pangu {
   version: string;
+  latexMode: boolean;
   constructor() {
     this.version = '4.0.7';
+    this.latexMode = false;
   }
 
   convertToFullwidth(symbols: string) {
@@ -112,7 +119,7 @@ class Pangu {
       .replace(/\?/g, '？');
   }
 
-  spacing(text: string): string {
+  spacing(text: string, options?: { latexMode?: boolean }): string {
     if (typeof text !== 'string') {
       console.warn(`spacing(text) only accepts string but got ${typeof text}`); // eslint-disable-line no-console
       return text;
@@ -124,6 +131,7 @@ class Pangu {
     }
 
     const self = this;
+    const isLatexMode = options?.latexMode ?? this.latexMode;
 
     // DEBUG
     // String.prototype.rawReplace = String.prototype.replace;
@@ -164,6 +172,17 @@ class Pangu {
       matchUrls.push(match); // 将匹配的网址存入数组
       return `{${index++}}`;
     });
+
+    // 為了避免「LaTeX 命令」被加入了盤古之白，所以要從轉換名單中剔除
+    // Use a different placeholder format for LaTeX commands to avoid conflicts
+    const matchLatexCommands: string[] = [];
+    if (isLatexMode) {
+      newText = newText.replace(LATEX_COMMAND, (match) => {
+        const latexIndex = matchLatexCommands.length;
+        matchLatexCommands.push(match);
+        return `〔LATEX${latexIndex}〕`;
+      });
+    }
 
     newText = newText.replace(DOTS_CJK, '$1 $2');
     newText = newText.replace(FIX_CJK_COLON_ANS, '$1：$2');
@@ -211,14 +230,26 @@ class Pangu {
 
     newText = newText.replace(MIDDLE_DOT, '・');
 
+    // 還原 LaTeX 命令 (需要在還原網址之前，因為使用不同的佔位符)
+    if (isLatexMode && matchLatexCommands.length > 0) {
+      newText = newText.replace(/〔LATEX(\d+)〕/g, (match, latexIndex) => {
+        const idx = parseInt(latexIndex);
+        if (idx < matchLatexCommands.length && matchLatexCommands[idx] !== undefined) {
+          return matchLatexCommands[idx];
+        }
+        return match;
+      });
+    }
+
     // 還原網址
+    const allProtectedItems = [...matchUrls, ...matchLatexCommands];
     newText = newText.replace(/{\d+}/g, (match) => {
       const number = parseInt(match.match(/\d+/)![0]);
-      // Only restore if this is a valid URL placeholder index
-      if (number < matchUrls.length && matchUrls[number] !== undefined) {
-        return matchUrls[number];
+      // Restore if this is a valid placeholder index
+      if (number < allProtectedItems.length && allProtectedItems[number] !== undefined) {
+        return allProtectedItems[number];
       }
-      // Keep the original text if it's not a URL placeholder (e.g., LaTeX formulas)
+      // Keep the original text if it's not a placeholder (e.g., LaTeX formulas)
       return match;
     });
 
