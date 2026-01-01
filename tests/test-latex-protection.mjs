@@ -55,12 +55,11 @@ function spacing(text, options = {}) {
     });
   }
   
-  // Restore protected items
-  const allProtectedItems = [...matchUrls, ...matchLatexCommands];
+  // Restore URLs only
   newText = newText.replace(/{\d+}/g, (match) => {
     const number = parseInt(match.match(/\d+/)[0]);
-    if (number < allProtectedItems.length && allProtectedItems[number] !== undefined) {
-      return allProtectedItems[number];
+    if (number < matchUrls.length && matchUrls[number] !== undefined) {
+      return matchUrls[number];
     }
     return match;
   });
@@ -135,7 +134,7 @@ const testCases = [
   {
     name: 'LaTeX with URL - both should be protected',
     input: '详情请参考https://example.com和论文\\cite{Author2023}的说明。',
-    expected: '详情请参考 https://example.com和论文\\cite{Author2023}的说明。', // Space after 参考 is expected
+    expected: '详情请参考 https://example.com和论文\\cite{Author2023}的说明。', // Space after 参考, but not after URL (URL is protected)
     latexMode: true
   }
 ];
