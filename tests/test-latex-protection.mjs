@@ -131,6 +131,12 @@ const testCases = [
     input: '图像分类任务使用\\cite{He2016}提出的ResNet模型，效果很好。',
     expected: '图像分类任务使用\\cite{He2016}提出的 ResNet 模型，效果很好。',
     latexMode: true
+  },
+  {
+    name: 'LaTeX with URL - both should be protected',
+    input: '详情请参考https://example.com和论文\\cite{Author2023}的说明。',
+    expected: '详情请参考 https://example.com和论文\\cite{Author2023}的说明。', // Space after 参考 is expected
+    latexMode: true
   }
 ];
 
