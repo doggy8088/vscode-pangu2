@@ -2,6 +2,13 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.4.0 - 2026-01-02
+
+* 修正 URL 佔位符與 LaTeX 語法衝突的嚴重 bug
+  * 將 URL 佔位符從 `{n}` 改為 `PANGUURL{n}PANGU` 格式
+  * 修正 `\SetAlgoNlRelativeSize{0}` 中的 `{0}` 被 URL 替換的問題
+  * 新增 bug 重現測試確保問題已解決
+
 ## 1.3.4 - 2025-01-01
 
 * 新增 LaTeX 文件支援
