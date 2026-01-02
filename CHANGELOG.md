@@ -2,6 +2,22 @@
 
 All notable changes to the **盤古之白** will be documented in this file.
 
+## 1.4.0 - 2026-01-02
+
+* 修正 URL 佔位符與 LaTeX 語法衝突的嚴重 bug
+  * 將 URL 佔位符從 `{n}` 改為 `PANGUURL{n}PANGU` 格式
+  * 修正 `\SetAlgoNlRelativeSize{0}` 中的 `{0}` 被 URL 替換的問題
+  * 新增 bug 重現測試確保問題已解決
+
+## 1.3.4 - 2025-01-01
+
+* 新增 LaTeX 文件支援
+  * 自動偵測 `.tex` 和 `.latex` 檔案類型
+  * 保護 LaTeX 命令不被加入空格（如 `\cite{ref}`, `\begin{figure}`, `\caption{text}` 等）
+  * 使用獨特的佔位符格式 `〔LATEX{n}〕` 避免與 URL 佔位符衝突
+  * 支援各種 LaTeX 命令格式：基本命令、帶參數命令、可選參數、星號變體等
+  * 詳細文檔請參考 [LATEX_SUPPORT.md](LATEX_SUPPORT.md)
+
 ## 1.3.3 - 2025-10-03
 
 * 修正 `GETDATE()` 這樣的字串被改成 `GETDATE ()` 的問題
