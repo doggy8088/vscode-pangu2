@@ -165,11 +165,12 @@ class Pangu {
     // );
 
     // 為了避免「網址」被加入了盤古之白，所以要從轉換名單中剔除
-    let index = 0;
+    // Use unique placeholder format to avoid conflicts with LaTeX syntax like {0}
     const matchUrls: string[] = []; // 存储原始网址
     newText = newText.replace(URL, (match) => {
+      const urlIndex = matchUrls.length;
       matchUrls.push(match); // 将匹配的网址存入数组
-      return `{${index++}}`;
+      return `PANGUURL${urlIndex}PANGU`;
     });
 
     // 為了避免「LaTeX 命令」被加入了盤古之白，所以要從轉換名單中剔除
@@ -241,13 +242,12 @@ class Pangu {
     }
 
     // 還原網址
-    newText = newText.replace(/{\d+}/g, (match) => {
-      const number = parseInt(match.match(/\d+/)![0]);
+    newText = newText.replace(/PANGUURL(\d+)PANGU/g, (match, urlIndex) => {
+      const idx = parseInt(urlIndex);
       // Only restore if this is a valid URL placeholder index
-      if (number < matchUrls.length && matchUrls[number] !== undefined) {
-        return matchUrls[number];
+      if (idx < matchUrls.length && matchUrls[idx] !== undefined) {
+        return matchUrls[idx];
       }
-      // Keep the original text if it's not a URL placeholder (e.g., LaTeX formulas)
       return match;
     });
 
