@@ -21,11 +21,11 @@ function spacing(text, options = {}) {
   let newText = text;
   
   // Protect URLs
-  let index = 0;
   const matchUrls = [];
   newText = newText.replace(URL, (match) => {
+    const urlIndex = matchUrls.length;
     matchUrls.push(match);
-    return `{${index++}}`;
+    return `PANGUURL${urlIndex}PANGU`;
   });
   
   // Protect LaTeX commands if in LaTeX mode
@@ -55,11 +55,11 @@ function spacing(text, options = {}) {
     });
   }
   
-  // Restore URLs only
-  newText = newText.replace(/{\d+}/g, (match) => {
-    const number = parseInt(match.match(/\d+/)[0]);
-    if (number < matchUrls.length && matchUrls[number] !== undefined) {
-      return matchUrls[number];
+  // Restore URLs
+  newText = newText.replace(/PANGUURL(\d+)PANGU/g, (match, urlIndex) => {
+    const idx = parseInt(urlIndex);
+    if (idx < matchUrls.length && matchUrls[idx] !== undefined) {
+      return matchUrls[idx];
     }
     return match;
   });
