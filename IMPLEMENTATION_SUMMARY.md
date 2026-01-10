@@ -2,7 +2,7 @@
 
 ## Issue Addressed
 
-**Issue**: [是否有 LaTeX 适配计划？](https://github.com/doggy8088/vscode-pangu2/issues/XXX)
+**Issue**: [是否有 LaTeX 适配计划？](https://github.com/doggy8088/vscode-pangu2/issues/32)
 
 The extension was incorrectly adding spaces between LaTeX commands and their arguments, breaking LaTeX syntax.
 
