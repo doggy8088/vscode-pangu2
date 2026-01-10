@@ -134,7 +134,7 @@ const testCases = [
   {
     name: 'LaTeX with URL - both should be protected',
     input: '详情请参考https://example.com和论文\\cite{Author2023}的说明。',
-    expected: '详情请参考 https://example.com和论文\\cite{Author2023}的说明。', // Space after 参考, but not after URL (URL is protected)
+    expected: '详情请参考 https://example.com 和论文\\cite{Author2023}的说明。', // Space after 参考 and after URL before CJK
     latexMode: true
   }
 ];
