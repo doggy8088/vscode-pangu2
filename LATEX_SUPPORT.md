@@ -89,6 +89,21 @@ The following LaTeX command patterns are protected:
 - Commands with multiple arguments: `\command[opt1][opt2]{arg1}{arg2}`
 - Commands with star variants: `\command*{arg}`
 
+### Protected Math Formulas
+
+LaTeX math formulas are also protected from spacing:
+- Inline math: `$...$` or `\(...\)`
+- Display math: `$$...$$` or `\[...\]`
+
+**Example:**
+```latex
+质能关系式 $E=mc^2$ 很重要
+化学式 $H_{2}O$ 是水
+积分公式 $$\int_0^1 x^2 dx$$ 等于
+```
+
+These formulas will remain unchanged during spacing operations.
+
 ### Examples of Protected Commands
 
 - Citations: `\cite{ref}`, `\citep{ref}`, `\citet{ref}`

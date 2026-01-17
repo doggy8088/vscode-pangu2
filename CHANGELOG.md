@@ -8,6 +8,10 @@ All notable changes to the **盤古之白** will be documented in this file.
   * 將 URL 佔位符從 `{n}` 改為 `PANGUURL{n}PANGU` 格式
   * 修正 `\SetAlgoNlRelativeSize{0}` 中的 `{0}` 被 URL 替換的問題
   * 新增 bug 重現測試確保問題已解決
+* 新增 LaTeX 數學公式保護
+  * 保護行內數學公式：`$...$` 或 `\(...\)`
+  * 保護顯示數學公式：`$$...$$` 或 `\[...\]`
+  * 確保數學公式內容不被盤古之白修改
 
 ## 1.3.4 - 2025-01-01
 
