@@ -99,6 +99,12 @@ const URL = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1
 // This pattern captures common LaTeX commands with their arguments to protect them from spacing
 const LATEX_COMMAND = /\\[a-zA-Z]+(?:\*)?(?:\[[^\]]*\])*(?:\{[^}]*\})*/g;
 
+// LaTeX math formula patterns: protect inline and display math from spacing
+// Inline math: $...$ or \(...\)
+// Display math: $$...$$ or \[...\] or environments like \begin{equation}...\end{equation}
+const LATEX_INLINE_MATH = /\$(?!\$)[^\$]+?\$|\\\((?:[^\\]|\\(?!\)))*?\\\)/g;
+const LATEX_DISPLAY_MATH = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]/g;
+
 class Pangu {
   version: string;
   latexMode: boolean;
@@ -184,6 +190,27 @@ class Pangu {
       });
     }
 
+    // 為了避免「LaTeX 數學公式」被加入了盤古之白，所以要從轉換名單中剔除
+    // Protect inline math formulas: $...$ or \(...\)
+    const matchLatexInlineMath: string[] = [];
+    if (isLatexMode) {
+      newText = newText.replace(LATEX_INLINE_MATH, (match) => {
+        const mathIndex = matchLatexInlineMath.length;
+        matchLatexInlineMath.push(match);
+        return `〔MATH${mathIndex}〕`;
+      });
+    }
+
+    // Protect display math formulas: $$...$$ or \[...\]
+    const matchLatexDisplayMath: string[] = [];
+    if (isLatexMode) {
+      newText = newText.replace(LATEX_DISPLAY_MATH, (match) => {
+        const displayIndex = matchLatexDisplayMath.length;
+        matchLatexDisplayMath.push(match);
+        return `〔DISPLAYMATH${displayIndex}〕`;
+      });
+    }
+
     newText = newText.replace(DOTS_CJK, '$1 $2');
     newText = newText.replace(FIX_CJK_COLON_ANS, '$1：$2');
 
@@ -236,6 +263,28 @@ class Pangu {
         const idx = parseInt(latexIndex);
         if (idx < matchLatexCommands.length && matchLatexCommands[idx] !== undefined) {
           return matchLatexCommands[idx];
+        }
+        return match;
+      });
+    }
+
+    // 還原 LaTeX 行內數學公式
+    if (isLatexMode && matchLatexInlineMath.length > 0) {
+      newText = newText.replace(/〔MATH(\d+)〕/g, (match, mathIndex) => {
+        const idx = parseInt(mathIndex);
+        if (idx < matchLatexInlineMath.length && matchLatexInlineMath[idx] !== undefined) {
+          return matchLatexInlineMath[idx];
+        }
+        return match;
+      });
+    }
+
+    // 還原 LaTeX 顯示數學公式
+    if (isLatexMode && matchLatexDisplayMath.length > 0) {
+      newText = newText.replace(/〔DISPLAYMATH(\d+)〕/g, (match, displayIndex) => {
+        const idx = parseInt(displayIndex);
+        if (idx < matchLatexDisplayMath.length && matchLatexDisplayMath[idx] !== undefined) {
+          return matchLatexDisplayMath[idx];
         }
         return match;
       });
