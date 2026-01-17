@@ -20,6 +20,10 @@
   * 可自動判斷 Inline Code、粗體、斜體、刪除線與文字之間的空白判斷
   * 支援 LaTeX 數學公式保護（如 `$d_{15}$`）
   * 支援指令區塊保護（如 `::: warning` 區塊）
+* 支援 **LaTeX** 文件加入盤古之白 ⭐ **NEW!**
+  * 自動保護 LaTeX 命令（如 `\cite{ref}`, `\begin{figure}`, `\caption{text}` 等）
+  * 避免在 LaTeX 命令與參數之間加入空格
+  * 詳細說明請參考 [LaTeX Support Documentation](LATEX_SUPPORT.md)
 * 支援儲存文件時自動加入盤古之白 (預設並未啟用)
 * 智慧處理全形與半形括號轉換
 * 修正 LLM 常見的格式問題

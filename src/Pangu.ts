@@ -95,10 +95,22 @@ const MIDDLE_DOT = /([ ]*)([\u00b7\u2022\u2027])([ ]*)/g;
 // Pattern source: https://uibakery.io/regex-library/url
 const URL = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=\u2e80-\u2eff\u2f00-\u2fdf\u3040-\u309f\u30a0-\u30fa\u30fc-\u30ff\u3100-\u312f\u3200-\u32ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]*)/ig;
 
+// LaTeX command pattern: matches \command{...}, \command[...]{...}, ~\command{...}, etc.
+// This pattern captures common LaTeX commands with their arguments to protect them from spacing
+const LATEX_COMMAND = /\\[a-zA-Z]+(?:\*)?(?:\[[^\]]*\])*(?:\{[^}]*\})*/g;
+
+// LaTeX math formula patterns: protect inline and display math from spacing
+// Inline math: $...$ or \(...\)
+// Display math: $$...$$ or \[...\] or environments like \begin{equation}...\end{equation}
+const LATEX_INLINE_MATH = /\$(?!\$)[^\$]+?\$|\\\((?:[^\\]|\\(?!\)))*?\\\)/g;
+const LATEX_DISPLAY_MATH = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]/g;
+
 class Pangu {
   version: string;
+  latexMode: boolean;
   constructor() {
     this.version = '4.0.7';
+    this.latexMode = false;
   }
 
   convertToFullwidth(symbols: string) {
@@ -112,7 +124,7 @@ class Pangu {
       .replace(/\?/g, '？');
   }
 
-  spacing(text: string): string {
+  spacing(text: string, options?: { latexMode?: boolean }): string {
     if (typeof text !== 'string') {
       console.warn(`spacing(text) only accepts string but got ${typeof text}`); // eslint-disable-line no-console
       return text;
@@ -124,6 +136,7 @@ class Pangu {
     }
 
     const self = this;
+    const isLatexMode = options?.latexMode ?? this.latexMode;
 
     // DEBUG
     // String.prototype.rawReplace = String.prototype.replace;
@@ -158,12 +171,45 @@ class Pangu {
     // );
 
     // 為了避免「網址」被加入了盤古之白，所以要從轉換名單中剔除
-    let index = 0;
+    // Use unique placeholder format to avoid conflicts with LaTeX syntax like {0}
     const matchUrls: string[] = []; // 存储原始网址
     newText = newText.replace(URL, (match) => {
+      const urlIndex = matchUrls.length;
       matchUrls.push(match); // 将匹配的网址存入数组
-      return `{${index++}}`;
+      return `PANGUURL${urlIndex}PANGU`;
     });
+
+    // 為了避免「LaTeX 命令」被加入了盤古之白，所以要從轉換名單中剔除
+    // Use a different placeholder format for LaTeX commands to avoid conflicts
+    const matchLatexCommands: string[] = [];
+    if (isLatexMode) {
+      newText = newText.replace(LATEX_COMMAND, (match) => {
+        const latexIndex = matchLatexCommands.length;
+        matchLatexCommands.push(match);
+        return `〔LATEX${latexIndex}〕`;
+      });
+    }
+
+    // 為了避免「LaTeX 數學公式」被加入了盤古之白，所以要從轉換名單中剔除
+    // Protect inline math formulas: $...$ or \(...\)
+    const matchLatexInlineMath: string[] = [];
+    if (isLatexMode) {
+      newText = newText.replace(LATEX_INLINE_MATH, (match) => {
+        const mathIndex = matchLatexInlineMath.length;
+        matchLatexInlineMath.push(match);
+        return `〔MATH${mathIndex}〕`;
+      });
+    }
+
+    // Protect display math formulas: $$...$$ or \[...\]
+    const matchLatexDisplayMath: string[] = [];
+    if (isLatexMode) {
+      newText = newText.replace(LATEX_DISPLAY_MATH, (match) => {
+        const displayIndex = matchLatexDisplayMath.length;
+        matchLatexDisplayMath.push(match);
+        return `〔DISPLAYMATH${displayIndex}〕`;
+      });
+    }
 
     newText = newText.replace(DOTS_CJK, '$1 $2');
     newText = newText.replace(FIX_CJK_COLON_ANS, '$1：$2');
@@ -211,14 +257,46 @@ class Pangu {
 
     newText = newText.replace(MIDDLE_DOT, '・');
 
+    // 還原 LaTeX 命令 (需要在還原網址之前，因為使用不同的佔位符)
+    if (isLatexMode && matchLatexCommands.length > 0) {
+      newText = newText.replace(/〔LATEX(\d+)〕/g, (match, latexIndex) => {
+        const idx = parseInt(latexIndex);
+        if (idx < matchLatexCommands.length && matchLatexCommands[idx] !== undefined) {
+          return matchLatexCommands[idx];
+        }
+        return match;
+      });
+    }
+
+    // 還原 LaTeX 行內數學公式
+    if (isLatexMode && matchLatexInlineMath.length > 0) {
+      newText = newText.replace(/〔MATH(\d+)〕/g, (match, mathIndex) => {
+        const idx = parseInt(mathIndex);
+        if (idx < matchLatexInlineMath.length && matchLatexInlineMath[idx] !== undefined) {
+          return matchLatexInlineMath[idx];
+        }
+        return match;
+      });
+    }
+
+    // 還原 LaTeX 顯示數學公式
+    if (isLatexMode && matchLatexDisplayMath.length > 0) {
+      newText = newText.replace(/〔DISPLAYMATH(\d+)〕/g, (match, displayIndex) => {
+        const idx = parseInt(displayIndex);
+        if (idx < matchLatexDisplayMath.length && matchLatexDisplayMath[idx] !== undefined) {
+          return matchLatexDisplayMath[idx];
+        }
+        return match;
+      });
+    }
+
     // 還原網址
-    newText = newText.replace(/{\d+}/g, (match) => {
-      const number = parseInt(match.match(/\d+/)![0]);
+    newText = newText.replace(/PANGUURL(\d+)PANGU/g, (match, urlIndex) => {
+      const idx = parseInt(urlIndex);
       // Only restore if this is a valid URL placeholder index
-      if (number < matchUrls.length && matchUrls[number] !== undefined) {
-        return matchUrls[number];
+      if (idx < matchUrls.length && matchUrls[idx] !== undefined) {
+        return matchUrls[idx];
       }
-      // Keep the original text if it's not a URL placeholder (e.g., LaTeX formulas)
       return match;
     });
 
