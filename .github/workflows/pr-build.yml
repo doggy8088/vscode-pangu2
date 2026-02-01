@@ -61,7 +61,7 @@ jobs:
               const fileSizeInBytes = stats.size;
               const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
               const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
-              fileSize = fileSizeInMB > 1 ? `${fileSizeInMB} MB` : `${fileSizeInKB} KB`;
+              fileSize = parseFloat(fileSizeInMB) > 1 ? `${fileSizeInMB} MB` : `${fileSizeInKB} KB`;
             } catch (error) {
               console.log('無法取得檔案大小:', error);
             }
