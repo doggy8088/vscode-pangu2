@@ -6,6 +6,9 @@
  */
 
 // CJK (Chinese, Japanese, Korean) character ranges
+// NOTE: This is intentionally duplicated from Pangu.ts for standalone testing
+// without requiring TypeScript compilation. If the CJK range changes in Pangu.ts,
+// this should be updated accordingly.
 const CJK = '\u2e80-\u2eff\u2f00-\u2fdf\u3040-\u309f\u30a0-\u30fa\u30fc-\u30ff\u3100-\u312f\u3200-\u32ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff';
 const ANY_CJK = new RegExp(`[${CJK}]`);
 
@@ -155,7 +158,7 @@ This is a paragraph with **bold** and _italic_ text.
     name: '帶全形標點的英文',
     input: 'Hello，World！',
     expected: false,
-    desc: 'English with fullwidth punctuation (no CJK)'
+    desc: 'English with fullwidth punctuation (U+FF00-U+FFEF range, not CJK)'
   },
   {
     name: '中文標點',
