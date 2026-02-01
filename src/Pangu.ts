@@ -26,6 +26,14 @@ const CJK =
 //
 // some S below does not include all symbols
 const ANY_CJK = new RegExp(`[${CJK}]`);
+
+/**
+ * Check if text contains any CJK (Chinese, Japanese, Korean) characters.
+ * This is used to skip processing for pure English/Western text.
+ */
+export function containsCJK(text: string): boolean {
+  return ANY_CJK.test(text);
+}
 // the symbol part only includes ~ ! ; : , . ? but . only matches one character
 const CONVERT_TO_FULLWIDTH_CJK_SYMBOLS_CJK = new RegExp(
   `([${CJK}])[ ]*([\\:]+|\\.)[ ]*([${CJK}])`,
