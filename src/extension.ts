@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { pangu } from './Pangu.js';
+import { pangu, containsCJK } from './Pangu.js';
 import { PanguTool } from './PanguTool.js';
 import { formatMarkdownContent } from './MarkdownFormatter.js';
 
@@ -55,6 +55,12 @@ function addSpace(
       logger.appendLine(`  Language: ${d.languageId}`);
       logger.appendLine(`  Input length: ${txt.length} chars, ${txt.split('\n').length} lines`);
       logger.appendLine(`  Input preview: ${JSON.stringify(txt.substring(0, 100))}${txt.length > 100 ? '...' : ''}`);
+
+      // Skip processing if no CJK characters are found (fixes infinite auto-save loop on pure English files)
+      if (!containsCJK(txt)) {
+        logger.appendLine(`  ⏭️  Skipping: No CJK characters found in selection ${x + 1}`);
+        continue;
+      }
 
       switch (d.languageId) {
         case 'markdown': {

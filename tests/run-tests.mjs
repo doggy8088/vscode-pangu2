@@ -15,7 +15,8 @@ console.log('='.repeat(50));
 const testFiles = [
   'simple-test-1.mjs',
   'visual-test-2.mjs', 
-  'quick-test-3.mjs'
+  'quick-test-3.mjs',
+  'test-cjk-detection.mjs'
 ];
 
 async function runTest(testFile) {
