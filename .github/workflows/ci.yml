@@ -5,26 +5,136 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   build:
     name: 建構測試
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/build-job.yml
 
+  package:
+    name: 打包測試
+    needs: build
+    uses: ./.github/workflows/package-job.yml
+    with:
+      version: ${{ needs.build.outputs.version }}
+      upload-artifact: ${{ github.event_name == 'pull_request' }}
+      artifact-name: pangu2-${{ needs.build.outputs.version }}-pr${{ github.event.pull_request.number || 'main' }}
+
+  pr-comment:
+    name: PR 留言
+    if: github.event_name == 'pull_request'
+    needs: [build, package]
+    runs-on: ubuntu-latest
+    
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4
 
-      - name: 設定 Node.js
-        uses: actions/setup-node@v4
+      - name: 下載 VSIX 檔案
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20'
+          name: pangu2-${{ needs.build.outputs.version }}-pr${{ github.event.pull_request.number }}
 
-      - name: 安裝相依套件
-        run: npm ci
+      - name: 在 PR 留言
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const version = '${{ needs.build.outputs.version }}';
+            const runId = '${{ github.run_id }}';
+            const prNumber = context.issue.number;
+            const repo = context.repo;
+            
+            // 取得 VSIX 檔案大小
+            const vsixFile = `pangu2-${version}.vsix`;
+            let fileSize = 'N/A';
+            try {
+              const stats = fs.statSync(vsixFile);
+              const fileSizeInBytes = stats.size;
+              const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
+              const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+              fileSize = parseFloat(fileSizeInMB) > 1 ? `${fileSizeInMB} MB` : `${fileSizeInKB} KB`;
+            } catch (error) {
+              console.log('無法取得檔案大小:', error);
+            }
 
-      - name: 建構專案
-        run: npm run esbuild
+            const actionUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
+            const artifactUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}#artifacts`;
 
-      - name: 打包擴充功能（測試）
-        run: npx -y @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
+            const commentBody = `## 🎉 建置成功！
+            
+            **版本：** \`${version}\`
+            **檔案大小：** ${fileSize}
+            
+            ### 📦 下載 VSIX 檔案
+            
+            請前往 [Artifacts 下載頁面](${artifactUrl}) 下載 \`pangu2-${version}-pr${prNumber}\`
+            
+            ### 🔗 相關連結
+            
+            - [查看建置詳情](${actionUrl})
+            - [下載頁面](${artifactUrl})
+            
+            ### 📝 安裝說明
+            
+            下載 VSIX 檔案後，您可以使用以下方式安裝：
+            
+            1. **透過 VS Code 介面：**
+               - 開啟 VS Code
+               - 前往擴充功能頁面 (Ctrl+Shift+X 或 Cmd+Shift+X)
+               - 點選右上角的「...」選單
+               - 選擇「從 VSIX 安裝...」
+               - 選取下載的 VSIX 檔案
+            
+            2. **透過命令列：**
+               \`\`\`bash
+               code --install-extension pangu2-${version}.vsix
+               \`\`\`
+            
+            ---
+            *此建置由 GitHub Actions 自動產生*`;
+
+            // 檢查是否已有此 workflow 的留言
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: repo.owner,
+              repo: repo.repo,
+              issue_number: prNumber
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🎉 建置成功！')
+            );
+
+            if (botComment) {
+              // 更新現有留言
+              await github.rest.issues.updateComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+              console.log('已更新現有留言');
+            } else {
+              // 建立新留言
+              await github.rest.issues.createComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                issue_number: prNumber,
+                body: commentBody
+              });
+              console.log('已建立新留言');
+            }
+
+      - name: 建置摘要
+        run: |
+          echo "### ✅ 建置完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**版本：** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**VSIX 檔案已上傳為 Artifact，請前往 [Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts) 下載**" >> $GITHUB_STEP_SUMMARY

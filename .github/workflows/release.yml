@@ -3,27 +3,27 @@ name: 自動發布 VS Code 擴充套件
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'package.json'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
-    name: 建構與發布
+  check-version:
+    name: 檢查版本變更
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
+    outputs:
+      should-release: ${{ steps.version_check.outputs.should_release }}
+      version: ${{ steps.package_version.outputs.version }}
+      tag-exists: ${{ steps.check_tag.outputs.exists }}
+    
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4
-
-      - name: 設定 Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: 安裝相依套件
-        run: npm ci
+          fetch-depth: 2
 
       - name: 讀取版本
         id: package_version
@@ -35,39 +35,91 @@ jobs:
           TAG_NAME="v${{ steps.package_version.outputs.version }}"
           if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME"; then
             echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Tag $TAG_NAME already exists, skipping release"
+            echo "⚠️ Tag $TAG_NAME already exists, skipping release"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Tag $TAG_NAME does not exist, proceeding with release"
+            echo "✅ Tag $TAG_NAME does not exist, proceeding with release"
           fi
 
-      - name: 打包擴充功能
-        if: steps.check_tag.outputs.exists == 'false'
-        run: npx -y @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
+      - name: 檢查版本是否變更
+        id: version_check
+        run: |
+          # 如果是手動觸發，直接發布
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "📝 Manual workflow dispatch - will release"
+            exit 0
+          fi
+          
+          # 檢查 package.json 是否在最新 commit 中被修改
+          if git diff HEAD^ HEAD --name-only | grep -q "^package.json$"; then
+            # 檢查版本號是否變更
+            OLD_VERSION=$(git show HEAD^:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8')).version" || echo "")
+            NEW_VERSION="${{ steps.package_version.outputs.version }}"
+            
+            if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "✅ Version changed from $OLD_VERSION to $NEW_VERSION - will release"
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "⚠️ package.json changed but version unchanged - skipping release"
+            fi
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ package.json not changed - skipping release"
+          fi
+
+  build:
+    name: 建構專案
+    needs: check-version
+    if: needs.check-version.outputs.should-release == 'true' && needs.check-version.outputs.tag-exists == 'false'
+    uses: ./.github/workflows/build-job.yml
+
+  package:
+    name: 打包發布版本
+    needs: [check-version, build]
+    if: needs.check-version.outputs.should-release == 'true' && needs.check-version.outputs.tag-exists == 'false'
+    uses: ./.github/workflows/package-job.yml
+    with:
+      version: ${{ needs.check-version.outputs.version }}
+      upload-artifact: true
+      artifact-name: pangu2-${{ needs.check-version.outputs.version }}-release
+
+  release:
+    name: 發布到 GitHub 和 Marketplace
+    needs: [check-version, build, package]
+    if: needs.check-version.outputs.should-release == 'true' && needs.check-version.outputs.tag-exists == 'false'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 下載 VSIX 檔案
+        uses: actions/download-artifact@v4
+        with:
+          name: pangu2-${{ needs.check-version.outputs.version }}-release
 
       - name: 建立標籤
-        if: steps.check_tag.outputs.exists == 'false'
         run: |
-          TAG_NAME="v${{ steps.package_version.outputs.version }}"
+          TAG_NAME="v${{ needs.check-version.outputs.version }}"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
           git push origin "$TAG_NAME"
 
-      - name: 建立 Release
+      - name: 建立 GitHub Release
         id: create_release
-        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          name: 盤古之白 v${{ steps.package_version.outputs.version }}
-          tag_name: v${{ steps.package_version.outputs.version }}
+          name: 盤古之白 v${{ needs.check-version.outputs.version }}
+          tag_name: v${{ needs.check-version.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
-          files: pangu2-${{ steps.package_version.outputs.version }}.vsix
+          files: pangu2-${{ needs.check-version.outputs.version }}.vsix
 
       - name: 發布到 VS Code Marketplace
-        if: steps.check_tag.outputs.exists == 'false' && success()
-        run: npx -y @vscode/vsce publish --packagePath pangu2-${{ steps.package_version.outputs.version }}.vsix
+        run: npx -y @vscode/vsce publish --packagePath pangu2-${{ needs.check-version.outputs.version }}.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
