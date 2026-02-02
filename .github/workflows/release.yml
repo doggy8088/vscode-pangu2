@@ -18,7 +18,7 @@ jobs:
       should-release: ${{ steps.version_check.outputs.should_release }}
       version: ${{ steps.package_version.outputs.version }}
       tag-exists: ${{ steps.check_tag.outputs.exists }}
-    
+
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4
@@ -50,13 +50,13 @@ jobs:
             echo "📝 Manual workflow dispatch - will release"
             exit 0
           fi
-          
+
           # 檢查 package.json 是否在最新 commit 中被修改
           if git diff HEAD^ HEAD --name-only | grep -q "^package.json$"; then
             # 檢查版本號是否變更
             OLD_VERSION=$(git show HEAD^:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8')).version" || echo "")
             NEW_VERSION="${{ steps.package_version.outputs.version }}"
-            
+
             if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
               echo "should_release=true" >> $GITHUB_OUTPUT
               echo "✅ Version changed from $OLD_VERSION to $NEW_VERSION - will release"
@@ -90,7 +90,7 @@ jobs:
     needs: [check-version, build, package]
     if: needs.check-version.outputs.should-release == 'true' && needs.check-version.outputs.tag-exists == 'false'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4
