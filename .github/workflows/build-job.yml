@@ -11,10 +11,10 @@ jobs:
   build:
     name: 建構專案
     runs-on: ubuntu-latest
-    
+
     outputs:
       version: ${{ steps.package_version.outputs.version }}
-    
+
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4

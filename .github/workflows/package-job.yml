@@ -22,7 +22,7 @@ jobs:
   package:
     name: 打包 VSIX
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4

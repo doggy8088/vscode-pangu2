@@ -30,7 +30,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [build, package]
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
             const runId = '${{ github.run_id }}';
             const prNumber = context.issue.number;
             const repo = context.repo;
-            
+
             // 取得 VSIX 檔案大小
             const vsixFile = `pangu2-${version}.vsix`;
             let fileSize = 'N/A';
@@ -67,35 +67,35 @@ jobs:
             const artifactUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}#artifacts`;
 
             const commentBody = `## 🎉 建置成功！
-            
+
             **版本：** \`${version}\`
             **檔案大小：** ${fileSize}
-            
+
             ### 📦 下載 VSIX 檔案
-            
+
             請前往 [Artifacts 下載頁面](${artifactUrl}) 下載 \`pangu2-${version}-pr${prNumber}\`
-            
+
             ### 🔗 相關連結
-            
+
             - [查看建置詳情](${actionUrl})
             - [下載頁面](${artifactUrl})
-            
+
             ### 📝 安裝說明
-            
+
             下載 VSIX 檔案後，您可以使用以下方式安裝：
-            
+
             1. **透過 VS Code 介面：**
                - 開啟 VS Code
                - 前往擴充功能頁面 (Ctrl+Shift+X 或 Cmd+Shift+X)
                - 點選右上角的「...」選單
                - 選擇「從 VSIX 安裝...」
                - 選取下載的 VSIX 檔案
-            
+
             2. **透過命令列：**
                \`\`\`bash
                code --install-extension pangu2-${version}.vsix
                \`\`\`
-            
+
             ---
             *此建置由 GitHub Actions 自動產生*`;
 
@@ -106,8 +106,8 @@ jobs:
               issue_number: prNumber
             });
 
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('🎉 建置成功！')
             );
 
