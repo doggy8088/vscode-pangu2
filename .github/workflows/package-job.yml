@@ -23,6 +23,9 @@ jobs:
     name: 打包 VSIX
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4

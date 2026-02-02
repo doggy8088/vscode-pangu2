@@ -12,6 +12,9 @@ jobs:
     name: 建構專案
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     outputs:
       version: ${{ steps.package_version.outputs.version }}
 
