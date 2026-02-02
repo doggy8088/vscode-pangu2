@@ -16,7 +16,7 @@ on:
         description: "Artifact 名稱"
         required: false
         type: string
-        default: ""
+        default: "vsix-package"
 
 jobs:
   package:

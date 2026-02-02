@@ -54,7 +54,7 @@ jobs:
           # 檢查 package.json 是否在最新 commit 中被修改
           if git diff HEAD^ HEAD --name-only | grep -q "^package.json$"; then
             # 檢查版本號是否變更
-            OLD_VERSION=$(git show HEAD^:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8')).version" || echo "")
+            OLD_VERSION=$(git show HEAD^:package.json | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).version)" || echo "")
             NEW_VERSION="${{ steps.package_version.outputs.version }}"
 
             if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
