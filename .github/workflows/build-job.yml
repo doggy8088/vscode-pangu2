@@ -1,0 +1,52 @@
+name: 建構作業
+
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: "專案版本號"
+        value: ${{ jobs.build.outputs.version }}
+
+jobs:
+  build:
+    name: 建構專案
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.package_version.outputs.version }}
+    
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 安裝相依套件
+        run: npm ci
+
+      - name: 讀取版本
+        id: package_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: 建構專案
+        run: npm run esbuild
+
+      - name: 上傳建構產物
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            out/
+            package.json
+            package-lock.json
+            README.md
+            CHANGELOG.md
+            LICENSE
+            icon.png
+            images/
+            .vscodeignore
+          retention-days: 1

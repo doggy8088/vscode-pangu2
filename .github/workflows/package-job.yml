@@ -1,0 +1,49 @@
+name: 打包作業
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "專案版本號"
+        required: true
+        type: string
+      upload-artifact:
+        description: "是否上傳 VSIX 為 artifact"
+        required: false
+        type: boolean
+        default: false
+      artifact-name:
+        description: "Artifact 名稱"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  package:
+    name: 打包 VSIX
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 下載建構產物
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - name: 打包擴充功能
+        run: npx -y @vscode/vsce package --baseImagesUrl https://raw.githubusercontent.com/doggy8088/vscode-pangu/main/ --allow-star-activation
+
+      - name: 上傳 VSIX 檔案
+        if: inputs.upload-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: pangu2-${{ inputs.version }}.vsix
+          retention-days: 30
